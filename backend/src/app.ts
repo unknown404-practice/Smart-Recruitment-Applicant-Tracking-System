@@ -14,6 +14,7 @@ import candidateRoutes from './routes/candidateRoutes';
 import resumeRoutes from './routes/resumeRoutes';
 import applicationRoutes from './routes/applicationRoutes';
 import interviewRoutes from './routes/interviewRoutes';
+import offerRoutes from './routes/offerRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -103,8 +104,6 @@ app.get('/api/health', async (_req: Request, res: Response) => {
 
 // Authentication and RBAC endpoints
 app.use('/api/auth', authRoutes);
-
-// Admin Role Management & System Configuration endpoints
 app.use('/api/admin', adminRoutes);
 
 // Job Requisitions & Lifecycle endpoints
@@ -122,6 +121,9 @@ app.use('/api/applications', applicationRoutes);
 // Interview Scheduling & Conflict Check endpoints
 app.use('/api/interviews', interviewRoutes);
 
+// Offer Letter Generator & Issuance endpoints
+app.use('/api/offers', offerRoutes);
+
 // In-App & Email Notification endpoints (Floor 17)
 app.use('/api/notifications', notificationRoutes);
 
@@ -137,6 +139,47 @@ app.use((req: Request, res: Response) => {
 });
 
 // Global Error Handler with production sanitization (SEC-04)
-app.use(errorHandler);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error & { status?: number; statusCode?: number }, _req: Request, res: Response, next: NextFunction) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  // Handle CORS rejection explicitly with 403 Forbidden
+  if (err.message && err.message.includes('not allowed by CORS')) {
+    res.status(403).json({
+      success: false,
+      error: {
+        message: 'Origin not allowed by CORS',
+        statusCode: 403,
+      },
+    });
+    return;
+  }
+
+  const rawStatus = err.statusCode || err.status || 500;
+  const statusCode = typeof rawStatus === 'number' && rawStatus >= 400 && rawStatus <= 599 ? rawStatus : 500;
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+
+  console.error(`[Error] ${err.name || 'Error'}: ${err.message}`);
+  if (err.stack && isDevelopment) {
+    console.error(err.stack);
+  }
+
+  // Prevent leaking internal SQL queries, DB connection errors, or stack traces in production (SEC-04)
+  let safeMessage = err.message || 'Internal Server Error';
+  if (!isDevelopment && statusCode >= 500) {
+    safeMessage = 'An unexpected internal server error occurred';
+  }
+
+  res.status(statusCode).json({
+    success: false,
+    error: {
+      message: safeMessage,
+      statusCode,
+      ...(isDevelopment && { stack: err.stack }),
+    },
+  });
+});
 
 export default app;
