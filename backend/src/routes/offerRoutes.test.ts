@@ -587,5 +587,109 @@ describe('Offer Letter Generator and Issue API (/api/offers)', () => {
       expect(res.status).toBe(400);
       expect(res.body.error.message).toMatch(/Invalid offer UUID format/i);
     });
-  });
+
+  // --------------------------------------------------------------------------
+  // 4. POST /api/offers/:id/respond (Candidate Offer Response)
+  // --------------------------------------------------------------------------
+  describe('POST /api/offers/:id/respond - Candidate Offer Response', () => {
+    const lockedOfferRow = {
+      id: validOfferId,
+      status: 'ISSUED',
+      expires_at: '2026-11-30T00:00:00.000Z',
+      application_id: validAppId,
+      current_stage: 'OFFERED',
+      candidate_id: candidateProfileId,
+      candidate_user_id: candidateUserId,
+      candidate_firebase_uid: 'candidate-owner-uid',
+    };
+
+    it('allows the owning candidate to accept an issued offer after confirming terms', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValueOnce(candidateTokenOwner);
+      mockClientQuery.mockResolvedValueOnce({ rows: [] }); // BEGIN
+      mockClientQuery.mockResolvedValueOnce({ rows: [lockedOfferRow] }); // SELECT FOR UPDATE
+      mockClientQuery.mockResolvedValueOnce({
+        rows: [{
+          id: validOfferId,
+          status: 'ACCEPTED',
+          accepted_at: new Date().toISOString(),
+          declined_at: null,
+          responded_at: new Date().toISOString(),
+        }],
+      }); // UPDATE offer
+      mockClientQuery.mockResolvedValueOnce({ rows: [] }); // COMMIT
+
+      const res = await request(app)
+        .post(`/api/offers/${validOfferId}/respond`)
+        .set('Authorization', 'Bearer cand-token')
+        .send({ response: 'ACCEPTED', acceptedTerms: true });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.offer.status).toBe('ACCEPTED');
+      expect(res.body.data.applicationStage).toBe('OFFERED');
+      expect(mockClientQuery).toHaveBeenCalledWith('COMMIT');
+      expect(mockClientRelease).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects acceptance when the candidate has not confirmed the terms', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValueOnce(candidateTokenOwner);
+
+      const res = await request(app)
+        .post(`/api/offers/${validOfferId}/respond`)
+        .set('Authorization', 'Bearer cand-token')
+        .send({ response: 'ACCEPTED', acceptedTerms: false });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toMatch(/accept the terms and conditions/i);
+      expect(mockClientQuery).not.toHaveBeenCalled();
+      expect(mockClientRelease).not.toHaveBeenCalled();
+    });
+
+    it('allows the owning candidate to decline an issued offer and rejects the application', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValueOnce(candidateTokenOwner);
+      mockClientQuery.mockResolvedValueOnce({ rows: [] }); // BEGIN
+      mockClientQuery.mockResolvedValueOnce({ rows: [lockedOfferRow] }); // SELECT FOR UPDATE
+      mockClientQuery.mockResolvedValueOnce({ rows: [{ id: validAppId }] }); // UPDATE application
+      mockClientQuery.mockResolvedValueOnce({ rows: [{ id: 'history-1' }] }); // INSERT stage history
+      mockClientQuery.mockResolvedValueOnce({
+        rows: [{
+          id: validOfferId,
+          status: 'DECLINED',
+          accepted_at: null,
+          declined_at: new Date().toISOString(),
+          responded_at: new Date().toISOString(),
+        }],
+      }); // UPDATE offer
+      mockClientQuery.mockResolvedValueOnce({ rows: [] }); // COMMIT
+
+      const res = await request(app)
+        .post(`/api/offers/${validOfferId}/respond`)
+        .set('Authorization', 'Bearer cand-token')
+        .send({ response: 'DECLINED' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.offer.status).toBe('DECLINED');
+      expect(res.body.data.applicationStage).toBe('REJECTED');
+      expect(mockClientQuery).toHaveBeenCalledWith('COMMIT');
+      expect(mockClientRelease).toHaveBeenCalledTimes(1);
+    });
+
+    it('forbids a different candidate from responding to the offer', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValueOnce(candidateTokenStranger);
+      mockClientQuery.mockResolvedValueOnce({ rows: [] }); // BEGIN
+      mockClientQuery.mockResolvedValueOnce({ rows: [lockedOfferRow] }); // SELECT FOR UPDATE
+      mockClientQuery.mockResolvedValueOnce({ rows: [] }); // ROLLBACK
+
+      const res = await request(app)
+        .post(`/api/offers/${validOfferId}/respond`)
+        .set('Authorization', 'Bearer stranger-token')
+        .send({ response: 'ACCEPTED', acceptedTerms: true });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.message).toMatch(/do not have permission to respond/i);
+      expect(mockClientQuery).toHaveBeenCalledWith('ROLLBACK');
+      expect(mockClientRelease).toHaveBeenCalledTimes(1);
+    });
+  });  });
 });

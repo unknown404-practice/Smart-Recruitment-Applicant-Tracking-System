@@ -17,11 +17,13 @@ import {
   Check,
   Video,
   Search,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
+import CandidateOffersOnboarding from '../components/CandidateOffersOnboarding';
 import { Pagination } from '../components/ui/Pagination';
 import { apiClient } from '../services/apiClient';
 import {
@@ -50,7 +52,7 @@ export const CandidateDashboardPage: React.FC = () => {
   const { dbUser } = useAuth();
 
   // Active navigation tab
-  const [activeTab, setActiveTab] = useState<'profile' | 'applications' | 'interviews' | 'jobs'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'applications' | 'interviews' | 'jobs' | 'offers'>('profile');
 
   // Job Search Seeking Status
   const [seekingStatus, setSeekingStatus] = useState<'ACTIVELY_LOOKING' | 'OPEN_TO_OFFERS' | 'NOT_LOOKING'>(
@@ -868,6 +870,17 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
             <Sparkles className="w-4 h-4 text-amber-500" />
             Recommended Jobs
           </button>
+          <button
+            onClick={() => setActiveTab('offers')}
+            className={`py-3.5 px-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+              activeTab === 'offers'
+                ? 'border-brand-600 text-brand-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <ClipboardCheck className="w-4 h-4" />
+            Offers & Onboarding
+          </button>
         </nav>
       </div>
 
@@ -1251,6 +1264,8 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
       )}
 
       {/* --------------------------------------------------------------------- */}
+      {activeTab === 'offers' && <CandidateOffersOnboarding />}
+
       {/* Modal: Application Details Modal */}
       {/* --------------------------------------------------------------------- */}
       {selectedApplication && (

@@ -6,6 +6,7 @@ import {
   issueOffer,
   getOfferById,
   listOffers,
+  respondOffer,
   createOfferSchema,
 } from '../controllers/offerController';
 
@@ -55,6 +56,11 @@ router.post(
  * Retrieves offer details and immutable HTML offer letter snapshot.
  * Accessible to candidate owner, or HR/ADMIN within the same organization.
  */
+router.post(
+  '/:id/respond',
+  respondOffer
+);
+
 router.get(
   '/:id',
   getOfferById

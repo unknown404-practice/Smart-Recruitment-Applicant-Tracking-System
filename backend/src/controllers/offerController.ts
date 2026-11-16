@@ -885,3 +885,210 @@ export async function listOffers(req: Request, res: Response): Promise<void> {
   }
 }
 
+
+/**
+ * POST /api/offers/:id/respond
+ * Allows the owning candidate to accept or decline an issued offer.
+ */
+export async function respondOffer(req: Request, res: Response): Promise<void> {
+  const callerUid = req.user?.uid;
+  const callerRole = (req.user?.role || '').toUpperCase();
+
+  if (!callerUid) {
+    res.status(401).json({
+      success: false,
+      error: { message: 'Authentication required to respond to an offer', statusCode: 401 },
+    });
+    return;
+  }
+
+  if (callerRole !== 'CANDIDATE') {
+    res.status(403).json({
+      success: false,
+      error: { message: 'Only the candidate can respond to an employment offer', statusCode: 403 },
+    });
+    return;
+  }
+
+  const { id } = req.params;
+  if (!id || !UUID_REGEX.test(id)) {
+    res.status(400).json({
+      success: false,
+      error: { message: 'Invalid offer UUID format', statusCode: 400 },
+    });
+    return;
+  }
+
+  const responseSchema = z.object({
+    response: z.enum(['ACCEPTED', 'DECLINED']),
+    acceptedTerms: z.boolean().optional(),
+  });
+
+  const parsed = responseSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      success: false,
+      error: { message: 'Invalid offer response. Choose ACCEPTED or DECLINED.', statusCode: 400 },
+    });
+    return;
+  }
+
+  const { response } = parsed.data;
+
+  if (response === 'ACCEPTED' && parsed.data.acceptedTerms !== true) {
+    res.status(400).json({
+      success: false,
+      error: {
+        message: 'You must accept the terms and conditions before accepting this offer',
+        statusCode: 400,
+      },
+    });
+    return;
+  }
+
+  let client: Awaited<ReturnType<typeof getClient>> | null = null;
+  let inTransaction = false;
+
+  try {
+    client = await getClient();
+    await client.query('BEGIN');
+    inTransaction = true;
+
+    const offerResult = await client.query(
+      `
+        SELECT
+          o.id,
+          o.status,
+          o.expires_at,
+          o.application_id,
+          a.current_stage,
+          a.candidate_id,
+          cp.user_id AS candidate_user_id,
+          u.firebase_uid AS candidate_firebase_uid
+        FROM offer_records o
+        JOIN applications a ON o.application_id = a.id
+        JOIN candidate_profiles cp ON a.candidate_id = cp.id
+        JOIN users u ON cp.user_id = u.id
+        WHERE o.id = $1
+        FOR UPDATE OF o, a;
+      `,
+      [id]
+    );
+
+    if (offerResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(404).json({
+        success: false,
+        error: { message: 'Offer not found', statusCode: 404 },
+      });
+      return;
+    }
+
+    const offer = offerResult.rows[0];
+
+    if (offer.candidate_firebase_uid !== callerUid) {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(403).json({
+        success: false,
+        error: { message: 'You do not have permission to respond to this offer', statusCode: 403 },
+      });
+      return;
+    }
+
+    if (offer.status !== 'ISSUED') {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(409).json({
+        success: false,
+        error: { message: 'This offer is no longer available for a response', statusCode: 409 },
+      });
+      return;
+    }
+
+    if (offer.expires_at && new Date(offer.expires_at).getTime() <= Date.now()) {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(409).json({
+        success: false,
+        error: { message: 'This offer has expired', statusCode: 409 },
+      });
+      return;
+    }
+
+    if (response === 'DECLINED') {
+      const transition = validateStageTransition(
+        offer.current_stage,
+        'REJECTED',
+        'Candidate declined employment offer'
+      );
+
+      if (!transition.valid) {
+        throw Object.assign(new Error(transition.error || 'Application stage transition is invalid'), {
+          statusCode: 409,
+        });
+      }
+
+      await client.query(
+        `UPDATE applications SET current_stage = 'REJECTED', updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+        [offer.application_id]
+      );
+
+      await client.query(
+        `
+          INSERT INTO application_stage_history
+            (application_id, from_stage, to_stage, changed_by, reason)
+          VALUES ($1, $2, 'REJECTED', $3, $4)
+        `,
+        [
+          offer.application_id,
+          transition.fromStage,
+          offer.candidate_user_id,
+          'Candidate declined employment offer',
+        ]
+      );
+    }
+
+    const updatedOffer = await client.query(
+      `
+        UPDATE offer_records
+        SET status = $1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $2
+        RETURNING id, status, accepted_at, declined_at, responded_at;
+      `,
+      [response, id]
+    );
+
+    await client.query('COMMIT');
+    inTransaction = false;
+
+    res.status(200).json({
+      success: true,
+      message: response === 'ACCEPTED' ? 'Offer accepted successfully' : 'Offer declined successfully',
+      data: {
+        offer: updatedOffer.rows[0],
+        applicationStage: response === 'DECLINED' ? 'REJECTED' : offer.current_stage,
+      },
+    });
+  } catch (error: any) {
+    if (inTransaction && client) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('[OfferController] Rollback failed:', rollbackError);
+      }
+    }
+
+    console.error('[OfferController] Error responding to offer:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: {
+        message: error.message || 'Internal server error while responding to offer',
+        statusCode: error.statusCode || 500,
+      },
+    });
+  } finally {
+    client?.release();
+  }
+}
