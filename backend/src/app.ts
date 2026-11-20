@@ -17,6 +17,7 @@ import interviewRoutes from './routes/interviewRoutes';
 import offerRoutes from './routes/offerRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import onboardingRoutes from './routes/onboardingRoutes';
+import activityRoutes from './routes/activityRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app: Application = express();
@@ -140,6 +141,9 @@ app.use('/api/notifications', notificationRoutes);
 
 // Candidate Offer Response & Onboarding Task Checklist endpoints (Floor 19)
 app.use('/api/onboarding', onboardingRoutes);
+
+// Unified System Activity Log & Audit Feed endpoints (Floor 20)
+app.use('/api/activity', activityRoutes);
 
 // 404 Not Found Handler
 app.use((req: Request, res: Response) => {
