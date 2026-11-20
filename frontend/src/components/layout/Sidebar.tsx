@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
+import { Logo } from '../ui';
 import {
   Briefcase,
   GitBranch,
@@ -35,11 +36,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     >
       {/* Sidebar Header */}
       <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-        <div>
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            HR Management Console
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">Smart ATS Workflows</p>
+        <div className="flex items-center gap-2.5">
+          <Logo variant="icon" size="sm" />
+          <div>
+            <h2 className="text-xs font-semibold text-slate-800 tracking-tight">
+              Smart Employee
+            </h2>
+            <p className="text-[11px] text-slate-500">HR Workspace Console</p>
+          </div>
         </div>
         {onClose && (
           <button

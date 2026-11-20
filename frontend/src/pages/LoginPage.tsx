@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
-import { LogIn, Mail, Lock, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Button, Input, Modal, Badge } from '../components/ui';
+import { Mail, Lock, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Button, Input, Modal, Badge, Logo } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 
 export const LoginPage: React.FC = () => {
@@ -74,11 +74,11 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-50 text-brand-600 mb-1">
-            <LogIn className="w-6 h-6" />
+        <div className="text-center space-y-3">
+          <div className="flex justify-center mb-1">
+            <Logo variant="full" size="lg" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900">Sign in to Smart ATS</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Sign in to Smart Employee</h2>
           <p className="text-sm text-slate-500">
             Access your applications, applicant pipeline, and hiring portal
           </p>

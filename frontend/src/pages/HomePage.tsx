@@ -15,7 +15,7 @@ import {
   Lock,
 } from 'lucide-react';
 import axios from 'axios';
-import { Button, Badge, Modal, Input, Select } from '../components/ui';
+import { Button, Badge, Modal, Input, Select, Logo } from '../components/ui';
 import { isEmulatorActive } from '../config/firebaseClient';
 
 interface HealthData {
@@ -65,6 +65,9 @@ export const HomePage: React.FC = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-brand-50/50 via-white to-slate-50 border-b border-slate-200 py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <div className="flex justify-center mb-1">
+            <Logo variant="horizontal" size="xl" className="drop-shadow-xs" />
+          </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-100/80 border border-brand-200 text-brand-800 text-xs font-semibold uppercase tracking-wider">
             <Zap className="w-3.5 h-3.5 text-brand-600" />
             Floor 3 Active — Schema & UI Primitives Integrated

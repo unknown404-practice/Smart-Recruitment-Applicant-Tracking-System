@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { Briefcase, ShieldCheck } from 'lucide-react';
+import { Logo } from '../ui';
+import { ShieldCheck } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -10,11 +11,8 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand info */}
           <div className="space-y-3 md:col-span-2">
-            <div className="flex items-center gap-2 font-bold text-lg text-slate-900">
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600 text-white">
-                <Briefcase className="w-4 h-4" />
-              </span>
-              <span>Smart Recruitment & ATS</span>
+            <div className="flex items-center gap-2">
+              <Logo variant="horizontal" size="sm" showBadge={true} badgeText="Recruitment ATS" />
             </div>
             <p className="text-sm text-slate-500 max-w-md">
               Enterprise-grade recruitment platform built with Express, PostgreSQL, Firebase Auth, and React Vite. 25-day rapid development architecture.
