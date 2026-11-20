@@ -16,6 +16,8 @@ import {
   PIPELINE_COLUMNS,
   ALLOWED_NEXT_STAGES,
 } from './types';
+import { ActivityTimeline } from '../activity';
+import { useActivityFeed } from '../../hooks/useActivityFeed';
 
 interface CandidateDossierDrawerProps {
   isOpen: boolean;
@@ -59,6 +61,23 @@ export const CandidateDossierDrawer: React.FC<CandidateDossierDrawerProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Floor 20: Comprehensive Activity Journey Feed for Dossier
+  const {
+    activities,
+    loading: activityLoading,
+    refresh: refreshActivity,
+    setFilters: setActivityFilters,
+  } = useActivityFeed({
+    initialFilters: { applicationId: application?.id },
+    autoFetch: !!isOpen && !!application?.id,
+  });
+
+  React.useEffect(() => {
+    if (isOpen && application?.id) {
+      setActivityFilters({ applicationId: application.id });
+    }
+  }, [isOpen, application?.id, setActivityFilters]);
 
   return (
     <div
@@ -275,6 +294,19 @@ export const CandidateDossierDrawer: React.FC<CandidateDossierDrawerProps> = ({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Unified Candidate Activity Feed (Floor 20) */}
+          <div className="pt-2 border-t border-slate-200/60">
+            <ActivityTimeline
+              activities={activities}
+              loading={activityLoading}
+              onRefresh={refreshActivity}
+              compact={true}
+              showFilters={false}
+              title="Application Activity Journey"
+              subtitle="Aggregated audit feed of interviews, feedback, offers, and notifications"
+            />
           </div>
         </div>
 

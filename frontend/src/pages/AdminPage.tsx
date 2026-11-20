@@ -25,6 +25,8 @@ import {
 import { Button, Badge, Modal, Input, Select } from '../components/ui';
 import { apiClient } from '../services/apiClient';
 import { NotificationDeliveryLog } from '../components/notification';
+import { ActivityTimeline } from '../components/activity';
+import { useActivityFeed } from '../hooks/useActivityFeed';
 
 export type UserRole = 'ADMIN' | 'HR' | 'CANDIDATE';
 
@@ -157,6 +159,17 @@ export const AdminPage: React.FC = () => {
 
   // Sync Claims Feedback State
   const [isSyncingClaims, setIsSyncingClaims] = useState(false);
+
+  // Floor 20: System-wide Unified Activity Log Feed
+  const {
+    activities,
+    pagination: activityPagination,
+    filters: activityFilters,
+    loading: activityLoading,
+    error: activityError,
+    setFilters: setActivityFilters,
+    refresh: refreshActivity,
+  } = useActivityFeed();
 
   // Toast System
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
@@ -951,6 +964,21 @@ export const AdminPage: React.FC = () => {
       {/* SECTION 3: Notification Delivery Logs & Simulator Telemetry         */}
       {/* ------------------------------------------------------------------- */}
       <NotificationDeliveryLog />
+
+      {/* ------------------------------------------------------------------- */}
+      {/* SECTION 4: System-Wide Unified Activity Log (Floor 20)              */}
+      {/* ------------------------------------------------------------------- */}
+      <ActivityTimeline
+        activities={activities}
+        pagination={activityPagination}
+        loading={activityLoading}
+        error={activityError}
+        filters={activityFilters}
+        onFilterChange={setActivityFilters}
+        onRefresh={refreshActivity}
+        title="Unified System Activity Feed (Floor 20)"
+        subtitle="Real-time multi-tenant audit trail tracking stage machine transitions, interview scheduling, offer issuances, and email dispatches."
+      />
 
       {/* ------------------------------------------------------------------- */}
       {/* MODAL 1: Role Modification Modal (with Instant Feedback)            */}
