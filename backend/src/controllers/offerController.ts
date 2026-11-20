@@ -762,7 +762,7 @@ export async function getOfferById(req: Request, res: Response): Promise<void> {
         });
         return;
       }
-    } else if (callerRole === 'HR') {
+    } else if (callerRole === 'HR' || callerRole === 'RECRUITER') {
       let hrCompanyId = req.user?.companyId;
       if (!hrCompanyId && callerUid) {
         const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [callerUid]);
@@ -779,7 +779,11 @@ export async function getOfferById(req: Request, res: Response): Promise<void> {
         return;
       }
     } else if (callerRole === 'ADMIN') {
-      const adminCompanyId = req.user?.companyId;
+      let adminCompanyId = req.user?.companyId;
+      if (!adminCompanyId && callerUid) {
+        const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [callerUid]);
+        adminCompanyId = userRes.rows[0]?.company_id || null;
+      }
       if (adminCompanyId && offerRow.job_company_id && adminCompanyId !== offerRow.job_company_id) {
         res.status(403).json({
           success: false,
@@ -884,7 +888,7 @@ export async function listOffers(req: Request, res: Response): Promise<void> {
     if (callerRole === 'CANDIDATE') {
       sql += " WHERE u.firebase_uid = $1 AND o.status != 'DRAFT' ORDER BY o.created_at DESC";
       params.push(callerUid);
-    } else if (callerRole === 'HR') {
+    } else if (callerRole === 'HR' || callerRole === 'RECRUITER') {
       let hrCompanyId = req.user?.companyId;
       if (!hrCompanyId) {
         const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [callerUid]);
@@ -896,8 +900,26 @@ export async function listOffers(req: Request, res: Response): Promise<void> {
       }
       sql += ' WHERE j.company_id = $1 ORDER BY o.created_at DESC';
       params.push(hrCompanyId);
-    } else {
+    } else if (callerRole === 'ADMIN') {
+      let adminCompanyId = req.user?.companyId;
+      if (!adminCompanyId) {
+        const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [callerUid]);
+        adminCompanyId = userRes.rows[0]?.company_id || null;
+      }
+      if (adminCompanyId) {
+        sql += ' WHERE j.company_id = $1 ORDER BY o.created_at DESC';
+        params.push(adminCompanyId);
+      } else {
+        sql += ' ORDER BY o.created_at DESC';
+      }
+    } else if (callerRole === 'SUPER_ADMIN') {
       sql += ' ORDER BY o.created_at DESC';
+    } else {
+      res.status(403).json({
+        success: false,
+        error: { message: 'Forbidden: Unauthorized role', statusCode: 403 },
+      });
+      return;
     }
 
     const result = await query(sql, params);
@@ -1057,7 +1079,11 @@ export async function respondToOffer(req: Request, res: Response): Promise<void>
         return;
       }
     } else if (callerRole === 'ADMIN') {
-      const callerCompanyId = req.user?.companyId;
+      let callerCompanyId = req.user?.companyId;
+      if (!callerCompanyId && callerUid) {
+        const userRes = await client.query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [callerUid]);
+        callerCompanyId = userRes.rows[0]?.company_id || null;
+      }
       if (callerCompanyId && offerRow.job_company_id && callerCompanyId !== offerRow.job_company_id) {
         await client.query('ROLLBACK');
         inTransaction = false;

@@ -122,8 +122,20 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
         return;
       }
       effectiveCompanyId = callerCompanyId;
-    } else if (isGlobalAdmin) {
+    } else if (callerRole === 'ADMIN') {
+      if (callerCompanyId && companyId && companyId !== callerCompanyId) {
+        res.status(403).json({
+          success: false,
+          error: {
+            message: 'Forbidden: Cross-tenant activity log access is strictly prohibited',
+            statusCode: 403,
+          },
+        });
+        return;
+      }
       effectiveCompanyId = companyId || callerCompanyId || null;
+    } else if (callerRole === 'SUPER_ADMIN') {
+      effectiveCompanyId = companyId || null;
     }
 
     // Build parameterized WHERE conditions

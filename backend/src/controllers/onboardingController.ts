@@ -163,11 +163,12 @@ export async function getOnboardingTasks(req: Request, res: Response): Promise<v
       return;
     }
 
-    // HR or ADMIN role
-    let hrCompanyId = req.user?.companyId;
-    if (!hrCompanyId && callerRole === 'HR') {
+    // HR, RECRUITER, or ADMIN role
+    const isCompanyStaff = callerRole === 'HR' || callerRole === 'RECRUITER';
+    let staffCompanyId = req.user?.companyId;
+    if (!staffCompanyId && isCompanyStaff) {
       const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [callerUid]);
-      hrCompanyId = userRes.rows[0]?.company_id || null;
+      staffCompanyId = userRes.rows[0]?.company_id || null;
     }
 
     let sql = `
@@ -199,19 +200,32 @@ export async function getOnboardingTasks(req: Request, res: Response): Promise<v
     const params: any[] = [];
     let paramIndex = 1;
 
-    if (callerRole === 'HR') {
-      if (!hrCompanyId) {
+    if (isCompanyStaff) {
+      if (!staffCompanyId) {
         res.status(403).json({
           success: false,
-          error: { message: 'Forbidden: HR user has no assigned company', statusCode: 403 },
+          error: { message: `Forbidden: ${callerRole} user has no assigned company`, statusCode: 403 },
         });
         return;
       }
       sql += ` AND j.company_id = $${paramIndex++}`;
-      params.push(hrCompanyId);
-    } else if (callerRole === 'ADMIN' && req.user?.companyId) {
-      sql += ` AND j.company_id = $${paramIndex++}`;
-      params.push(req.user.companyId);
+      params.push(staffCompanyId);
+    } else if (callerRole === 'ADMIN') {
+      let adminCompanyId = req.user?.companyId;
+      if (!adminCompanyId) {
+        const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [callerUid]);
+        adminCompanyId = userRes.rows[0]?.company_id || null;
+      }
+      if (adminCompanyId) {
+        sql += ` AND j.company_id = $${paramIndex++}`;
+        params.push(adminCompanyId);
+      }
+    } else if (callerRole !== 'SUPER_ADMIN') {
+      res.status(403).json({
+        success: false,
+        error: { message: 'Forbidden: Insufficient privileges', statusCode: 403 },
+      });
+      return;
     }
 
     if (targetAppId) {
@@ -375,20 +389,20 @@ export async function toggleOnboardingTask(req: Request, res: Response): Promise
         });
         return;
       }
-    } else if (callerRole === 'HR') {
-      let hrCompanyId = req.user?.companyId;
-      if (!hrCompanyId) {
+    } else if (callerRole === 'HR' || callerRole === 'RECRUITER') {
+      let staffCompanyId = req.user?.companyId;
+      if (!staffCompanyId) {
         const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [callerUid]);
-        hrCompanyId = userRes.rows[0]?.company_id || null;
+        staffCompanyId = userRes.rows[0]?.company_id || null;
       }
-      if (!hrCompanyId) {
+      if (!staffCompanyId) {
         res.status(403).json({
           success: false,
-          error: { message: 'Forbidden: HR user has no assigned company', statusCode: 403 },
+          error: { message: `Forbidden: ${callerRole} user has no assigned company`, statusCode: 403 },
         });
         return;
       }
-      if (taskRow.job_company_id && hrCompanyId !== taskRow.job_company_id) {
+      if (taskRow.job_company_id && staffCompanyId !== taskRow.job_company_id) {
         res.status(403).json({
           success: false,
           error: {
@@ -399,7 +413,11 @@ export async function toggleOnboardingTask(req: Request, res: Response): Promise
         return;
       }
     } else if (callerRole === 'ADMIN') {
-      const adminCompanyId = req.user?.companyId;
+      let adminCompanyId = req.user?.companyId;
+      if (!adminCompanyId) {
+        const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [callerUid]);
+        adminCompanyId = userRes.rows[0]?.company_id || null;
+      }
       if (adminCompanyId && taskRow.job_company_id && adminCompanyId !== taskRow.job_company_id) {
         res.status(403).json({
           success: false,

@@ -36,10 +36,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, ch
     const normalizedUserRole = (role || 'CANDIDATE').toUpperCase();
     const normalizedAllowed = allowedRoles.map((r) => r.toUpperCase());
 
-    // Role Hierarchy check: ADMIN has access to HR routes as well
+    // Role Hierarchy check: SUPER_ADMIN has access to all, ADMIN has access to HR/RECRUITER routes
     const hasPermission =
       normalizedAllowed.includes(normalizedUserRole) ||
-      (normalizedUserRole === 'ADMIN' && normalizedAllowed.includes('HR'));
+      normalizedUserRole === 'SUPER_ADMIN' ||
+      (normalizedUserRole === 'ADMIN' && (normalizedAllowed.includes('HR') || normalizedAllowed.includes('RECRUITER')));
 
     if (!hasPermission) {
       return (

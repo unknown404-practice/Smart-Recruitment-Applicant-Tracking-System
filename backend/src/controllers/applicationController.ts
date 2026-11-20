@@ -423,13 +423,29 @@ export async function getApplicationById(req: Request, res: Response): Promise<v
 
     const appRecord = result.rows[0];
     const isOwner = appRecord.candidate_firebase_uid === firebaseUid;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
     if (isOwner) {
       // Candidate owner allowed
-    } else if (isAdmin) {
+    } else if (isSuperAdmin) {
       // Administrative override allowed
-    } else if (userRole === 'HR') {
+    } else if (userRole === 'ADMIN') {
+      let adminCompanyId = req.user?.companyId;
+      if (!adminCompanyId && firebaseUid) {
+        const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [firebaseUid]);
+        adminCompanyId = userRes.rows[0]?.company_id || null;
+      }
+      if (adminCompanyId && appRecord.job_company_id && adminCompanyId !== appRecord.job_company_id) {
+        res.status(403).json({
+          success: false,
+          error: {
+            message: 'Forbidden: You do not have permission to access this application',
+            statusCode: 403,
+          },
+        });
+        return;
+      }
+    } else if (userRole === 'HR' || userRole === 'RECRUITER') {
       let hrCompanyId = req.user?.companyId;
       if (!hrCompanyId && firebaseUid) {
         const userRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [firebaseUid]);
@@ -505,7 +521,7 @@ export async function updateApplicationStage(req: Request, res: Response): Promi
       return;
     }
 
-    if (userRole !== 'ADMIN' && userRole !== 'HR') {
+    if (userRole !== 'ADMIN' && userRole !== 'HR' && userRole !== 'RECRUITER' && userRole !== 'SUPER_ADMIN') {
       res.status(403).json({
         success: false,
         error: {
@@ -551,10 +567,10 @@ export async function updateApplicationStage(req: Request, res: Response): Promi
       return;
     }
 
-    if (actorUser.role === 'HR' && !actorUser.company_id) {
+    if ((actorUser.role === 'HR' || actorUser.role === 'RECRUITER') && !actorUser.company_id) {
       res.status(403).json({
         success: false,
-        error: { message: 'Forbidden: HR user has no assigned company', statusCode: 403 },
+        error: { message: `Forbidden: ${actorUser.role} user has no assigned company`, statusCode: 403 },
       });
       return;
     }
@@ -648,7 +664,7 @@ export async function listApplications(req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (userRole !== 'ADMIN' && userRole !== 'HR') {
+    if (userRole !== 'ADMIN' && userRole !== 'HR' && userRole !== 'RECRUITER' && userRole !== 'SUPER_ADMIN') {
       res.status(403).json({
         success: false,
         error: {
@@ -721,15 +737,18 @@ export async function listApplications(req: Request, res: Response): Promise<voi
     const values: any[] = [];
     let paramIndex = 1;
 
-    // Multi-tenant check: HR can only query jobs from their company (strict fail-closed)
-    if (actor.role === 'HR') {
+    // Multi-tenant check: HR or RECRUITER can only query jobs from their company (strict fail-closed)
+    if (actor.role === 'HR' || actor.role === 'RECRUITER') {
       if (!actor.company_id) {
         res.status(403).json({
           success: false,
-          error: { message: 'Forbidden: HR user has no assigned company', statusCode: 403 },
+          error: { message: `Forbidden: ${actor.role} user has no assigned company`, statusCode: 403 },
         });
         return;
       }
+      conditions.push(`j.company_id = $${paramIndex++}`);
+      values.push(actor.company_id);
+    } else if (actor.role === 'ADMIN' && actor.company_id) {
       conditions.push(`j.company_id = $${paramIndex++}`);
       values.push(actor.company_id);
     }
@@ -755,28 +774,58 @@ export async function listApplications(req: Request, res: Response): Promise<voi
     // Search query: matches candidate full_name, email, headline, or skills
     const search = (rawSearch || rawQ || '').trim();
     if (search) {
+      const escapedSearch = search.replace(/([%_\\])/g, '\\$1');
       conditions.push(`(
         u.full_name ILIKE $${paramIndex} OR
         u.email ILIKE $${paramIndex} OR
         cp.headline ILIKE $${paramIndex} OR
         $${paramIndex + 1} = ANY(cp.skills)
       )`);
-      values.push(`%${search}%`);
+      values.push(`%${escapedSearch}%`);
       values.push(search);
       paramIndex += 2;
     }
 
     // Date range filter
     const startDate = rawStartDate || start_date;
+    const endDate = rawEndDate || end_date;
+
     if (startDate) {
+      const parsedStart = new Date(startDate);
+      if (isNaN(parsedStart.getTime())) {
+        res.status(400).json({
+          success: false,
+          error: { message: 'Invalid startDate format', statusCode: 400 },
+        });
+        return;
+      }
       conditions.push(`a.applied_at >= $${paramIndex++}`);
-      values.push(new Date(startDate).toISOString());
+      values.push(parsedStart.toISOString());
     }
 
-    const endDate = rawEndDate || end_date;
     if (endDate) {
+      const parsedEnd = new Date(endDate);
+      if (isNaN(parsedEnd.getTime())) {
+        res.status(400).json({
+          success: false,
+          error: { message: 'Invalid endDate format', statusCode: 400 },
+        });
+        return;
+      }
       conditions.push(`a.applied_at <= $${paramIndex++}`);
-      values.push(new Date(endDate).toISOString());
+      values.push(parsedEnd.toISOString());
+    }
+
+    if (startDate && endDate) {
+      const s = new Date(startDate);
+      const e = new Date(endDate);
+      if (!isNaN(s.getTime()) && !isNaN(e.getTime()) && s.getTime() > e.getTime()) {
+        res.status(400).json({
+          success: false,
+          error: { message: 'startDate cannot be after endDate', statusCode: 400 },
+        });
+        return;
+      }
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -939,9 +988,11 @@ export async function getApplicationHistory(req: Request, res: Response): Promis
 
     const appRecord = appRes.rows[0];
     const isOwner = appRecord.candidate_firebase_uid === firebaseUid;
-    const isPrivileged = userRole === 'ADMIN' || userRole === 'HR';
+    const isSuperAdmin = userRole === 'SUPER_ADMIN';
+    const isStaff = userRole === 'HR' || userRole === 'RECRUITER';
+    const isAdmin = userRole === 'ADMIN';
 
-    if (!isOwner && !isPrivileged) {
+    if (!isOwner && !isSuperAdmin && !isStaff && !isAdmin) {
       res.status(403).json({
         success: false,
         error: {
@@ -952,14 +1003,25 @@ export async function getApplicationHistory(req: Request, res: Response): Promis
       return;
     }
 
-    // If caller is HR, verify company matches (strict fail-closed)
-    if (userRole === 'HR') {
-      let hrCompanyId = req.user?.companyId;
-      if (!hrCompanyId && firebaseUid) {
-        const hrUserRes = await query(`SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;`, [firebaseUid]);
-        hrCompanyId = hrUserRes.rows[0]?.company_id || null;
+    if (isStaff) {
+      let staffCompanyId = req.user?.companyId;
+      if (!staffCompanyId && firebaseUid) {
+        const staffUserRes = await query(`SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;`, [firebaseUid]);
+        staffCompanyId = staffUserRes.rows[0]?.company_id || null;
       }
-      if (!hrCompanyId || !appRecord.job_company_id || hrCompanyId !== appRecord.job_company_id) {
+      if (!staffCompanyId || !appRecord.job_company_id || staffCompanyId !== appRecord.job_company_id) {
+        res.status(403).json({
+          success: false,
+          error: {
+            message: 'Forbidden: You cannot inspect applications from another company',
+            statusCode: 403,
+          },
+        });
+        return;
+      }
+    } else if (isAdmin) {
+      const adminCompanyId = req.user?.companyId;
+      if (adminCompanyId && appRecord.job_company_id && adminCompanyId !== appRecord.job_company_id) {
         res.status(403).json({
           success: false,
           error: {

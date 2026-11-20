@@ -44,14 +44,14 @@ export const App: React.FC = () => {
                 <Route path={ROUTES.FORBIDDEN} element={<ForbiddenPage />} />
 
                 {/* Candidate Portal (Authenticated) */}
-                <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'HR', 'CANDIDATE']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN', 'HR', 'RECRUITER', 'CANDIDATE']} />}>
                   <Route path={ROUTES.CANDIDATE} element={<CandidateDashboardPage />} />
                   <Route path={ROUTES.CANDIDATE_INTERVIEWS} element={<CandidateInterviewsPage />} />
                   <Route path={ROUTES.CANDIDATE_OFFERS} element={<CandidateOffersPage />} />
                 </Route>
 
-                {/* HR Workspace Routes (HR and ADMIN only) */}
-                <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']} />}>
+                {/* HR Workspace Routes (HR, RECRUITER and ADMIN) */}
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN', 'HR', 'RECRUITER']} />}>
                   <Route path={ROUTES.HR_JOBS} element={<HrJobsPage />} />
                   <Route path={ROUTES.HR_PIPELINE} element={<HrPipelinePage />} />
                   <Route path={ROUTES.HR_INTERVIEWS} element={<HrInterviewsPage />} />
@@ -60,7 +60,7 @@ export const App: React.FC = () => {
                 </Route>
 
                 {/* Admin Security Routes (ADMIN only) */}
-                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']} />}>
                   <Route path={ROUTES.ADMIN} element={<AdminPage />} />
                 </Route>
 

@@ -103,12 +103,13 @@ export const listJobs = async (req: Request, res: Response): Promise<void> => {
     const values: unknown[] = [];
     let paramIndex = 1;
 
-    // Default: non-admin/HR users only see PUBLISHED jobs unless a status filter is explicitly permitted
+    // Default: non-admin/staff users only see PUBLISHED jobs unless a status filter is explicitly permitted
     const userRole = (req.user?.role || '').toUpperCase();
-    const isStaff = userRole === 'ADMIN' || userRole === 'HR' || userRole === 'SUPER_ADMIN';
+    const isStaff = userRole === 'ADMIN' || userRole === 'HR' || userRole === 'RECRUITER' || userRole === 'SUPER_ADMIN';
+    const isCompanyStaff = userRole === 'HR' || userRole === 'RECRUITER';
 
     let hrCompanyId: string | null = null;
-    if (userRole === 'HR') {
+    if (isCompanyStaff) {
       hrCompanyId = req.user?.companyId || null;
       if (!hrCompanyId && req.user?.uid) {
         const userRes = await pool.query('SELECT company_id FROM users WHERE firebase_uid = $1;', [req.user.uid]);
@@ -117,7 +118,7 @@ export const listJobs = async (req: Request, res: Response): Promise<void> => {
       if (!hrCompanyId) {
         res.status(403).json({
           success: false,
-          error: { message: 'Forbidden: HR user has no assigned company', statusCode: 403 },
+          error: { message: `Forbidden: ${userRole} user has no assigned company`, statusCode: 403 },
         });
         return;
       }
@@ -130,7 +131,7 @@ export const listJobs = async (req: Request, res: Response): Promise<void> => {
         if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
           conditions.push(`j.status = $${paramIndex++}`);
           values.push(normalizedStatus);
-        } else if (userRole === 'HR') {
+        } else if (isCompanyStaff) {
           if (normalizedStatus === 'PUBLISHED') {
             conditions.push(`j.status = $${paramIndex++}`);
             values.push('PUBLISHED');
@@ -153,8 +154,8 @@ export const listJobs = async (req: Request, res: Response): Promise<void> => {
           conditions.push(`j.status = 'PUBLISHED'`);
         }
       }
-    } else if (userRole === 'HR') {
-      // HR viewing job directory without status filter: can view all PUBLISHED jobs plus non-published jobs from their company
+    } else if (isCompanyStaff) {
+      // HR/Recruiter viewing job directory without status filter: can view all PUBLISHED jobs plus non-published jobs from their company
       conditions.push(`(j.status = 'PUBLISHED' OR j.company_id = $${paramIndex++})`);
       values.push(hrCompanyId);
     } else if (!isStaff) {
@@ -322,11 +323,11 @@ export const getJobById = async (req: Request, res: Response): Promise<void> => 
     const userRole = (req.user?.role || '').toUpperCase();
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
 
-    // Gate unreleased non-published drafts from candidates/public and cross-company HR
+    // Gate unreleased non-published drafts from candidates/public and cross-company HR/Recruiter
     if (job.status !== 'PUBLISHED') {
       if (isAdmin) {
         // Global administrative access allowed
-      } else if (userRole === 'HR') {
+      } else if (userRole === 'HR' || userRole === 'RECRUITER') {
         let hrCompanyId = req.user?.companyId;
         if (!hrCompanyId && req.user?.uid) {
           const userRes = await pool.query('SELECT company_id FROM users WHERE firebase_uid = $1;', [req.user.uid]);
@@ -337,7 +338,7 @@ export const getJobById = async (req: Request, res: Response): Promise<void> => 
             success: false,
             error: {
               message: !hrCompanyId
-                ? 'Forbidden: HR user has no assigned company'
+                ? `Forbidden: ${userRole} user has no assigned company`
                 : 'Forbidden: You are not authorized to view unreleased job requisitions belonging to another organization',
               statusCode: 403,
             },

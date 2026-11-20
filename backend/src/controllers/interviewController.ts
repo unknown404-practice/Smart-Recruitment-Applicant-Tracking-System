@@ -653,10 +653,10 @@ export async function listInterviewers(req: Request, res: Response): Promise<voi
       companyId = userRes.rows[0]?.company_id;
     }
 
-    if (callerRole === 'HR' && !companyId) {
+    if ((callerRole === 'HR' || callerRole === 'RECRUITER') && !companyId) {
       res.status(403).json({
         success: false,
-        error: { message: 'HR staff must have an active company association', statusCode: 403 },
+        error: { message: `${callerRole} staff must have an active company association`, statusCode: 403 },
       });
       return;
     }
@@ -777,10 +777,10 @@ export async function updateInterview(req: Request, res: Response): Promise<void
     const caller = callerRes.rows[0];
     const callerCompanyId = caller.company_id || req.user?.companyId;
 
-    if (callerRole === 'HR' && !callerCompanyId) {
+    if ((callerRole === 'HR' || callerRole === 'RECRUITER') && !callerCompanyId) {
       res.status(403).json({
         success: false,
-        error: { message: 'HR staff must have an active company association', statusCode: 403 },
+        error: { message: `${callerRole} staff must have an active company association`, statusCode: 403 },
       });
       return;
     }
@@ -1084,10 +1084,10 @@ export async function submitScorecard(req: Request, res: Response): Promise<void
     const caller = callerRes.rows[0];
     const callerCompanyId = caller.company_id || req.user?.companyId;
 
-    if (callerRole === 'HR' && !callerCompanyId) {
+    if ((callerRole === 'HR' || callerRole === 'RECRUITER') && !callerCompanyId) {
       res.status(403).json({
         success: false,
-        error: { message: 'HR staff must have an active company association', statusCode: 403 },
+        error: { message: `${callerRole} staff must have an active company association`, statusCode: 403 },
       });
       return;
     }

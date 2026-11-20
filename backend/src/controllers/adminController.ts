@@ -13,14 +13,14 @@ function isValidUuid(id: unknown): id is string {
 /**
  * Supported roles for role update
  */
-export const ALLOWED_ADMIN_ROLES = ['ADMIN', 'HR', 'CANDIDATE'] as const;
+export const ALLOWED_ADMIN_ROLES = ['ADMIN', 'HR', 'CANDIDATE', 'RECRUITER', 'INTERVIEWER'] as const;
 export type AdminUpdatableRole = (typeof ALLOWED_ADMIN_ROLES)[number];
 
 const updateRoleSchema = z.object({
   role: z.preprocess(
     (val) => (typeof val === 'string' ? val.trim().toUpperCase() : val),
     z.enum(ALLOWED_ADMIN_ROLES, {
-      errorMap: () => ({ message: 'Invalid role. Supported roles are: ADMIN, HR, CANDIDATE' }),
+      errorMap: () => ({ message: 'Invalid role. Supported roles are: ADMIN, HR, CANDIDATE, RECRUITER, INTERVIEWER' }),
     })
   ),
 });
@@ -46,7 +46,7 @@ const inviteUserSchema = z.object({
   role: z.preprocess(
     (val) => (typeof val === 'string' ? val.trim().toUpperCase() : val),
     z.enum(ALLOWED_ADMIN_ROLES, {
-      errorMap: () => ({ message: 'Invalid role. Supported roles are: ADMIN, HR, CANDIDATE' }),
+      errorMap: () => ({ message: 'Invalid role. Supported roles are: ADMIN, HR, CANDIDATE, RECRUITER, INTERVIEWER' }),
     })
   ).default('HR'),
 });

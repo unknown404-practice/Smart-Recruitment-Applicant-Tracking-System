@@ -78,25 +78,48 @@ router.get('/:id/download', async (req: Request, res: Response): Promise<void> =
 
     // IDOR & Authorization Guard:
     // 1. Candidate owner can download their own resume.
-    // 2. Global ADMIN can review any candidate resume.
-    // 3. HR can ONLY review candidate resumes if the candidate has applied to a job in HR's company.
+    // 2. Global SUPER_ADMIN or Admin without company assignment can review any candidate resume.
+    // 3. Company-assigned ADMIN, HR, or RECRUITER can ONLY review candidate resumes if the candidate has applied to a job in their company.
     const isOwner = currentUser.uid === resume.candidate_firebase_uid;
-    const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+    const isSuperAdmin = role === 'SUPER_ADMIN';
+    const isStaff = role === 'HR' || role === 'RECRUITER';
 
     if (isOwner) {
       // Owner candidate access allowed
-    } else if (isAdmin) {
-      // Global admin access allowed
-    } else if (role === 'HR') {
-      let hrCompanyId = currentUser.companyId;
-      if (!hrCompanyId && currentUser.uid) {
-        const hrRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [currentUser.uid]);
-        hrCompanyId = hrRes.rows[0]?.company_id || null;
+    } else if (isSuperAdmin) {
+      // Global superadmin access allowed
+    } else if (role === 'ADMIN') {
+      const adminCompanyId = currentUser.companyId;
+      if (adminCompanyId) {
+        const appMatchSql = `
+          SELECT 1 FROM applications a
+          JOIN jobs j ON a.job_id = j.id
+          WHERE j.company_id = $1
+            AND (a.resume_id = $2 OR a.candidate_id = $3)
+          LIMIT 1;
+        `;
+        const appMatchRes = await query(appMatchSql, [adminCompanyId, resumeId, resume.candidate_id]);
+        if (appMatchRes.rows.length === 0) {
+          res.status(403).json({
+            success: false,
+            error: {
+              message: 'Forbidden: You do not have permission to access resumes outside your organization applications',
+              statusCode: 403,
+            },
+          });
+          return;
+        }
       }
-      if (!hrCompanyId) {
+    } else if (isStaff) {
+      let staffCompanyId = currentUser.companyId;
+      if (!staffCompanyId && currentUser.uid) {
+        const staffRes = await query('SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;', [currentUser.uid]);
+        staffCompanyId = staffRes.rows[0]?.company_id || null;
+      }
+      if (!staffCompanyId) {
         res.status(403).json({
           success: false,
-          error: { message: 'Forbidden: HR user has no assigned company', statusCode: 403 },
+          error: { message: `Forbidden: ${role} user has no assigned company`, statusCode: 403 },
         });
         return;
       }
@@ -108,7 +131,7 @@ router.get('/:id/download', async (req: Request, res: Response): Promise<void> =
           AND (a.resume_id = $2 OR a.candidate_id = $3)
         LIMIT 1;
       `;
-      const appMatchRes = await query(appMatchSql, [hrCompanyId, resumeId, resume.candidate_id]);
+      const appMatchRes = await query(appMatchSql, [staffCompanyId, resumeId, resume.candidate_id]);
       if (appMatchRes.rows.length === 0) {
         res.status(403).json({
           success: false,

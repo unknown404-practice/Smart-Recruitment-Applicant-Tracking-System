@@ -184,9 +184,15 @@ export async function executeStageTransitionWithLock(params: {
     const applicationRecord: LockedApplicationRecord = lockResult.rows[0];
     currentFromStage = applicationRecord.current_stage;
 
-    // Multi-tenant check: HR user can only transition applications for jobs in their own company
-    if (actorRole === 'HR') {
+    // Multi-tenant check: HR or RECRUITER user can only transition applications for jobs in their own company
+    if (actorRole === 'HR' || actorRole === 'RECRUITER') {
       if (!actorCompanyId || !applicationRecord.company_id || actorCompanyId !== applicationRecord.company_id) {
+        const err = new Error('Forbidden: You are not authorized to transition applications belonging to another organization');
+        (err as any).statusCode = 403;
+        throw err;
+      }
+    } else if (actorRole === 'ADMIN' && actorCompanyId) {
+      if (applicationRecord.company_id && actorCompanyId !== applicationRecord.company_id) {
         const err = new Error('Forbidden: You are not authorized to transition applications belonging to another organization');
         (err as any).statusCode = 403;
         throw err;

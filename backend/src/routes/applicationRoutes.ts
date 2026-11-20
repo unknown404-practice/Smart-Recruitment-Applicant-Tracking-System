@@ -24,7 +24,7 @@ router.use(authenticateFirebase);
  */
 router.get(
   '/',
-  requireRole(['ADMIN', 'HR']),
+  requireRole(['ADMIN', 'HR', 'RECRUITER']),
   listApplications
 );
 
@@ -73,7 +73,7 @@ router.get(
  */
 router.patch(
   '/:id/stage',
-  requireRole(['ADMIN', 'HR']),
+  requireRole(['ADMIN', 'HR', 'RECRUITER']),
   validateRequest({ body: updateApplicationStageSchema }),
   updateApplicationStage
 );
