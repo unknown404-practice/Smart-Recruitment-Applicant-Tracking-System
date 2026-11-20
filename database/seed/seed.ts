@@ -749,7 +749,7 @@ export async function runSeed(options: { closePool?: boolean } = { closePool: tr
 
           await client.query(
             `INSERT INTO application_stage_history (
-               application_id, from_stage, to_stage, changed_by, reason, created_at
+               application_id, from_stage, to_stage, changed_by, reason, changed_at
              ) VALUES (
                $1, 'OFFERED', 'HIRED', $2, 'Candidate accepted employment offer letter with digital signature', NOW() - INTERVAL '6 hours'
              );`,
