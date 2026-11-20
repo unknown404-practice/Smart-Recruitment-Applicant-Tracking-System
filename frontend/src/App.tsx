@@ -16,6 +16,7 @@ import { JobsPage } from './pages/JobsPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { CandidateDashboardPage } from './pages/CandidateDashboardPage';
 import { CandidateInterviewsPage } from './pages/CandidateInterviewsPage';
+import { CandidateOffersPage } from './pages/CandidateOffersPage';
 import { HrJobsPage } from './pages/hr/HrJobsPage';
 import { HrPipelinePage } from './pages/hr/HrPipelinePage';
 import { HrInterviewsPage } from './pages/hr/HrInterviewsPage';
@@ -46,6 +47,7 @@ export const App: React.FC = () => {
                 <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'HR', 'CANDIDATE']} />}>
                   <Route path={ROUTES.CANDIDATE} element={<CandidateDashboardPage />} />
                   <Route path={ROUTES.CANDIDATE_INTERVIEWS} element={<CandidateInterviewsPage />} />
+                  <Route path={ROUTES.CANDIDATE_OFFERS} element={<CandidateOffersPage />} />
                 </Route>
 
                 {/* HR Workspace Routes (HR and ADMIN only) */}

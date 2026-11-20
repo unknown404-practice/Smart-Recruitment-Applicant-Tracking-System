@@ -17,6 +17,7 @@ import {
   Check,
   Video,
   Search,
+  Gift,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
@@ -868,6 +869,17 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
             <Sparkles className="w-4 h-4 text-amber-500" />
             Recommended Jobs
           </button>
+
+          <Link
+            to={ROUTES.CANDIDATE_OFFERS}
+            className="py-3.5 px-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 border-transparent text-emerald-600 hover:text-emerald-700 hover:border-emerald-300"
+          >
+            <Gift className="w-4 h-4 text-emerald-600" />
+            Offers & Onboarding
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              New
+            </span>
+          </Link>
         </nav>
       </div>
 
