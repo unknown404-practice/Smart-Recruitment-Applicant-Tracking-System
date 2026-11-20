@@ -6,6 +6,7 @@ export const ROUTES = {
   JOB_DETAIL: '/jobs/:id',
   CANDIDATE: '/candidate',
   CANDIDATE_INTERVIEWS: '/candidate/interviews',
+  CANDIDATE_OFFERS: '/candidate/offers',
   HR_JOBS: '/hr/jobs',
   HR_PIPELINE: '/hr/pipeline',
   HR_INTERVIEWS: '/hr/interviews',

@@ -335,15 +335,15 @@ Establish Schema / API Contract               Build UI & State using Mock Data (
 ---
 
 #### 🔹 Day 19 (Floor 19): Candidate Offer Acceptance/Decline & Onboarding Checklist
-* [ ] **Cloud:** `security(cloud): enforce strict candidate ownership checks on offer records`
+* [x] **Cloud:** `security(cloud): enforce strict candidate ownership checks on offer records`
   * Enforce row-level ownership checks ensuring Candidate A cannot view or respond to Candidate B's offer.
-* [ ] **Backend:** `feat(onboarding-api): add candidate offer response and onboarding task api`
+* [x] **Backend:** `feat(onboarding-api): add candidate offer response and onboarding task api`
   * Implement `POST /api/offers/:id/respond` (ACCEPT/DECLINE auto-spawning tasks) and `PATCH /api/onboarding/:id`.
-* [ ] **Frontend 1:** `feat(onboarding-ui): build candidate offer response portal and task checklist`
+* [x] **Frontend 1:** `feat(onboarding-ui): build candidate offer response portal and task checklist`
   * Build Candidate Offer Review card (`/candidate/offers`) with Accept/Decline and Onboarding Checklist.
-* [ ] **Frontend 2:** `feat(onboarding-ui): wire offer response actions and onboarding task toggle state`
+* [x] **Frontend 2:** `feat(onboarding-ui): wire offer response actions and onboarding task toggle state`
   * Wire digital acceptance checkbox, confirmation dialog, and onboarding task check/uncheck state.
-* [ ] **Leader / DevOps:** `test(onboarding): test offer acceptance transaction and cross-candidate guard`
+* [x] **Leader / DevOps:** `test(onboarding): test offer acceptance transaction and cross-candidate guard`
   * Write tests proving accepting offer updates `hired_at`, spawns onboarding tasks, and blocks other candidates.
 * **Daily Done Criteria:** Candidate accepts offer; status updates to Hired; onboarding checklist appears with initial tasks.
 

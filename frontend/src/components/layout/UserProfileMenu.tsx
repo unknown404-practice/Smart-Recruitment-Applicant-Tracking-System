@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, LogOut, Settings, ShieldCheck, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { User, LogOut, Settings, ShieldCheck, ChevronDown, CheckCircle2, Gift } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -130,6 +130,15 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({ user, onLogout
             >
               <User className="w-4 h-4 text-slate-400" />
               Candidate Profile
+            </Link>
+
+            <Link
+              to={ROUTES.CANDIDATE_OFFERS}
+              onClick={() => setDropdownOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition"
+            >
+              <Gift className="w-4 h-4 text-emerald-500" />
+              Offers & Onboarding
             </Link>
 
             <Link

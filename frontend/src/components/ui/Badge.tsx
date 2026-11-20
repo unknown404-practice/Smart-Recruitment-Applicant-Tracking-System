@@ -14,6 +14,7 @@ export type BadgeVariant =
   | 'SELECTED'
   | 'OFFERED'
   | 'REJECTED'
+  | 'HIRED'
   // Job status variants
   | 'DRAFT'
   | 'PUBLISHED'
@@ -50,6 +51,7 @@ export const Badge: React.FC<BadgeProps> = ({
     SELECTED: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', dotColor: 'bg-teal-500' },
     OFFERED: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dotColor: 'bg-emerald-500' },
     REJECTED: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', dotColor: 'bg-rose-500' },
+    HIRED: { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300', dotColor: 'bg-emerald-600' },
 
     // Job status mappings
     DRAFT: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300', dotColor: 'bg-slate-400' },
