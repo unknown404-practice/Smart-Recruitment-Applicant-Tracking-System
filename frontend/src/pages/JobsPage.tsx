@@ -13,6 +13,7 @@ import {
 import { useJobs } from '../hooks/useJobs';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { Pagination } from '../components/ui/Pagination';
+import { StaggerContainer, StaggerItem, MotionCard } from '../components/animations';
 
 const DEPARTMENTS = [
   'All Departments',
@@ -233,66 +234,67 @@ export const JobsPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredJobs.map((job) => (
-            <div
-              key={job.id}
-              className="bg-white rounded-2xl border border-slate-200 hover:border-brand-300 hover:shadow-md transition-all duration-200 p-6 flex flex-col justify-between group"
-            >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-sm">
-                    {job.company_name?.charAt(0) || 'J'}
+            <StaggerItem key={job.id}>
+              <MotionCard
+                className="bg-white rounded-2xl border border-slate-200 hover:border-brand-300 hover:shadow-lg transition-all duration-200 p-6 flex flex-col justify-between group h-full"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-sm">
+                      {job.company_name?.charAt(0) || 'J'}
+                    </div>
+                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+                      {job.department || 'General'}
+                    </span>
                   </div>
-                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-                    {job.department || 'General'}
-                  </span>
-                </div>
 
-                <div>
-                  <h3 className="font-bold text-slate-900 text-lg group-hover:text-brand-600 transition line-clamp-1">
-                    {job.title}
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium inline-flex items-center gap-1 mt-1">
-                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                    {job.company_name || 'Hiring Company'}
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-lg group-hover:text-brand-600 transition line-clamp-1">
+                      {job.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium inline-flex items-center gap-1 mt-1">
+                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                      {job.company_name || 'Hiring Company'}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                    {job.description}
                   </p>
+
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 pt-2 border-t border-slate-100">
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                      {job.location}
+                    </span>
+                    <span>•</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+                      {job.employment_type}
+                    </span>
+                  </div>
                 </div>
 
-                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                  {job.description}
-                </p>
+                <div className="flex items-center justify-between pt-5 mt-4 border-t border-slate-100">
+                  <div className="text-xs">
+                    <p className="text-slate-400 text-[10px] font-medium uppercase tracking-wider">Salary</p>
+                    <p className="font-bold text-slate-800">{formatSalary(job.salary_min, job.salary_max)}</p>
+                  </div>
 
-                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 pt-2 border-t border-slate-100">
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    {job.location}
-                  </span>
-                  <span>•</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                    {job.employment_type}
-                  </span>
+                  <Link
+                    to={`/jobs/${job.id}`}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-50 hover:bg-brand-600 hover:text-white text-slate-700 font-medium text-xs rounded-lg transition"
+                  >
+                    View Details
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-5 mt-4 border-t border-slate-100">
-                <div className="text-xs">
-                  <p className="text-slate-400 text-[10px] font-medium uppercase tracking-wider">Salary</p>
-                  <p className="font-bold text-slate-800">{formatSalary(job.salary_min, job.salary_max)}</p>
-                </div>
-
-                <Link
-                  to={`/jobs/${job.id}`}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-50 hover:bg-brand-600 hover:text-white text-slate-700 font-medium text-xs rounded-lg transition"
-                >
-                  View Details
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
+              </MotionCard>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       )}
 
       {/* Pagination Controls */}

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ROUTES } from '../constants/routes';
 import { Mail, Lock, User, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button, Input, Logo } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
+import { SPRING_GENTLE } from '../components/animations';
 
 export const RegisterPage: React.FC = () => {
   const [role, setRole] = useState<'CANDIDATE' | 'HR' | 'ADMIN'>('CANDIDATE');
@@ -62,7 +64,12 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <div className="min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={SPRING_GENTLE}
+        className="max-w-md w-full space-y-6 bg-white p-8 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow"
+      >
         <div className="text-center space-y-3">
           <div className="flex justify-center mb-1">
             <Logo variant="full" size="lg" />
@@ -202,7 +209,7 @@ export const RegisterPage: React.FC = () => {
             Sign In
           </Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 };

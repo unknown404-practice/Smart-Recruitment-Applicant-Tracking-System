@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { Footer } from './Footer';
 import { useAuth } from '../../context/AuthContext';
+import { TRANSITION_EASE, SPRING_GENTLE } from '../animations';
 
 export const AppLayout: React.FC = () => {
   const location = useLocation();
@@ -54,18 +56,30 @@ export const AppLayout: React.FC = () => {
               {sidebarOpen && <Sidebar onClose={() => setSidebarOpen(false)} />}
             </div>
 
-            {/* Mobile / Tablet slide-out drawer with backdrop */}
-            {sidebarOpen && (
-              <div className="lg:hidden fixed inset-0 z-50 flex">
-                <div
-                  className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
-                  onClick={() => setSidebarOpen(false)}
-                />
-                <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-2xl z-10">
-                  <Sidebar onClose={() => setSidebarOpen(false)} />
+            {/* Mobile / Tablet animated slide-out drawer with backdrop */}
+            <AnimatePresence>
+              {sidebarOpen && (
+                <div className="lg:hidden fixed inset-0 z-50 flex">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+                    onClick={() => setSidebarOpen(false)}
+                  />
+                  <motion.div
+                    initial={{ x: '-100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '-100%' }}
+                    transition={SPRING_GENTLE}
+                    className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-2xl z-10"
+                  >
+                    <Sidebar onClose={() => setSidebarOpen(false)} />
+                  </motion.div>
                 </div>
-              </div>
-            )}
+              )}
+            </AnimatePresence>
           </>
         )}
 
@@ -74,7 +88,18 @@ export const AppLayout: React.FC = () => {
             isWorkspaceRoute ? 'p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto' : ''
           }`}
         >
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.24, ease: TRANSITION_EASE }}
+              className="w-full"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

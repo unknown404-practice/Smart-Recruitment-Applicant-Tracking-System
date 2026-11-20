@@ -69,7 +69,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="border-t border-slate-100 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} Smart ATS Team. Day 1 Foundation Release.</p>
+          <p>© {new Date().getFullYear()} Smart Employee. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1 text-emerald-600 font-medium">
               <ShieldCheck className="w-3.5 h-3.5" /> Firebase Auth Emulator Verified

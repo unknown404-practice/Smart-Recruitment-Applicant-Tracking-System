@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ROUTES } from '../constants/routes';
 import {
   FileText,
@@ -35,6 +36,7 @@ import {
   ApplicationRecord,
   JobApplicationModal,
 } from '../components/candidate';
+import { SPRING_GENTLE, StaggerContainer, StaggerItem } from '../components/animations';
 
 // Application Stage Type
 export type ApplicationStage = 'APPLIED' | 'SCREENING' | 'INTERVIEW' | 'SELECTED' | 'OFFERED' | 'REJECTED';
@@ -608,7 +610,12 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
       {/* --------------------------------------------------------------------- */}
       {/* Candidate Portal Header Banner */}
       {/* --------------------------------------------------------------------- */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={SPRING_GENTLE}
+        className="bg-white rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-md transition-shadow p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+      >
         <div className="flex items-start gap-5">
           <div className="relative">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 text-white flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-md border-2 border-white">
@@ -707,111 +714,129 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
               </span>
             </div>
             <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200/60">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ease-out ${
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${profileCompleteness}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className={`h-full rounded-full ${
                   profileCompleteness === 100
                     ? 'bg-emerald-500'
                     : profileCompleteness >= 75
                     ? 'bg-brand-600'
                     : 'bg-amber-500'
                 }`}
-                style={{ width: `${profileCompleteness}%` }}
               />
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* --------------------------------------------------------------------- */}
       {/* Summary KPI Stat Cards */}
       {/* --------------------------------------------------------------------- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Active Applications */}
-        <div
-          onClick={() => setActiveTab('applications')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-brand-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between">
-            <div className="p-3 rounded-xl bg-blue-50 text-blue-600 group-hover:scale-105 transition-transform">
-              <FileText className="w-6 h-6" />
+        <StaggerItem>
+          <motion.div
+            whileHover={{ y: -4, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setActiveTab('applications')}
+            className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-brand-300 transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-blue-50 text-blue-600 group-hover:scale-105 transition-transform">
+                <FileText className="w-6 h-6" />
+              </div>
+              <span className="text-2xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                In Review
+              </span>
             </div>
-            <span className="text-2xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
-              In Review
-            </span>
-          </div>
-          <div className="mt-4">
-            <p className="text-2xl font-black text-slate-900">{applications.length}</p>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
-              Active Applications
-            </p>
-          </div>
-        </div>
+            <div className="mt-4">
+              <p className="text-2xl font-black text-slate-900">{applications.length}</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
+                Active Applications
+              </p>
+            </div>
+          </motion.div>
+        </StaggerItem>
 
         {/* Scheduled Interviews */}
-        <div
-          onClick={() => setActiveTab('interviews')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-brand-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between">
-            <div className="p-3 rounded-xl bg-purple-50 text-purple-600 group-hover:scale-105 transition-transform">
-              <Clock className="w-6 h-6" />
+        <StaggerItem>
+          <motion.div
+            whileHover={{ y: -4, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setActiveTab('interviews')}
+            className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-brand-300 transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-purple-50 text-purple-600 group-hover:scale-105 transition-transform">
+                <Clock className="w-6 h-6" />
+              </div>
+              <span className="text-2xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">
+                Next: Nov 12
+              </span>
             </div>
-            <span className="text-2xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">
-              Next: Nov 12
-            </span>
-          </div>
-          <div className="mt-4">
-            <p className="text-2xl font-black text-slate-900">1</p>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
-              Scheduled Interviews
-            </p>
-          </div>
-        </div>
+            <div className="mt-4">
+              <p className="text-2xl font-black text-slate-900">1</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
+                Scheduled Interviews
+              </p>
+            </div>
+          </motion.div>
+        </StaggerItem>
 
         {/* ATS Readiness / Master Resume */}
-        <div
-          onClick={() => setActiveTab('profile')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-brand-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between">
-            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-105 transition-transform">
-              <Sparkles className="w-6 h-6" />
+        <StaggerItem>
+          <motion.div
+            whileHover={{ y: -4, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setActiveTab('profile')}
+            className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-brand-300 transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <span className="text-2xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                ATS 96%
+              </span>
             </div>
-            <span className="text-2xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-              ATS 96%
-            </span>
-          </div>
-          <div className="mt-4">
-            <p className="text-2xl font-black text-emerald-600">
-              {activeResume ? 'Active' : 'Missing'}
-            </p>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
-              Master Resume Status
-            </p>
-          </div>
-        </div>
+            <div className="mt-4">
+              <p className="text-2xl font-black text-emerald-600">
+                {activeResume ? 'Active' : 'Missing'}
+              </p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
+                Master Resume Status
+              </p>
+            </div>
+          </motion.div>
+        </StaggerItem>
 
         {/* Skills Tagged */}
-        <div
-          onClick={() => setActiveTab('profile')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-brand-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between">
-            <div className="p-3 rounded-xl bg-brand-50 text-brand-600 group-hover:scale-105 transition-transform">
-              <Briefcase className="w-6 h-6" />
+        <StaggerItem>
+          <motion.div
+            whileHover={{ y: -4, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setActiveTab('profile')}
+            className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-brand-300 transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-brand-50 text-brand-600 group-hover:scale-105 transition-transform">
+                <Briefcase className="w-6 h-6" />
+              </div>
+              <span className="text-2xs font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md">
+                High Match
+              </span>
             </div>
-            <span className="text-2xs font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md">
-              High Match
-            </span>
-          </div>
-          <div className="mt-4">
-            <p className="text-2xl font-black text-slate-900">{profileData.skills.length}</p>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
-              Validated Tech Skills
-            </p>
-          </div>
-        </div>
-      </div>
+            <div className="mt-4">
+              <p className="text-2xl font-black text-slate-900">{profileData.skills.length}</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
+                Validated Tech Skills
+              </p>
+            </div>
+          </motion.div>
+        </StaggerItem>
+      </StaggerContainer>
 
       {/* --------------------------------------------------------------------- */}
       {/* Navigation Tabs Bar */}
@@ -820,22 +845,29 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
         <nav className="flex space-x-2 sm:space-x-8 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab('profile')}
-            className={`py-3.5 px-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`relative py-3.5 px-3 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
               activeTab === 'profile'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'text-brand-600'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <User className="w-4 h-4" />
             Profile & Resume Widget
+            {activeTab === 'profile' && (
+              <motion.span
+                layoutId="candidate-dashboard-active-tab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 rounded-full"
+                transition={SPRING_GENTLE}
+              />
+            )}
           </button>
 
           <button
             onClick={() => setActiveTab('applications')}
-            className={`py-3.5 px-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`relative py-3.5 px-3 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
               activeTab === 'applications'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'text-brand-600'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -843,31 +875,52 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
             <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
               {applications.length}
             </span>
+            {activeTab === 'applications' && (
+              <motion.span
+                layoutId="candidate-dashboard-active-tab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 rounded-full"
+                transition={SPRING_GENTLE}
+              />
+            )}
           </button>
 
           <button
             onClick={() => setActiveTab('interviews')}
-            className={`py-3.5 px-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`relative py-3.5 px-3 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
               activeTab === 'interviews'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'text-brand-600'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <Calendar className="w-4 h-4" />
             Interview Schedule
             <span className="w-2 h-2 rounded-full bg-purple-500" />
+            {activeTab === 'interviews' && (
+              <motion.span
+                layoutId="candidate-dashboard-active-tab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 rounded-full"
+                transition={SPRING_GENTLE}
+              />
+            )}
           </button>
 
           <button
             onClick={() => setActiveTab('jobs')}
-            className={`py-3.5 px-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`relative py-3.5 px-3 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
               activeTab === 'jobs'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'text-brand-600'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <Sparkles className="w-4 h-4 text-amber-500" />
             Recommended Jobs
+            {activeTab === 'jobs' && (
+              <motion.span
+                layoutId="candidate-dashboard-active-tab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 rounded-full"
+                transition={SPRING_GENTLE}
+              />
+            )}
           </button>
 
           <Link
@@ -884,11 +937,20 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
       </div>
 
       {/* --------------------------------------------------------------------- */}
-      {/* TAB 1: Profile & Resume Widget (Core Deliverable) */}
+      {/* Tab Panels with Smooth Transitions */}
       {/* --------------------------------------------------------------------- */}
-      {activeTab === 'profile' && (
-        <div className="space-y-8 animate-fadeIn">
-          {/* Top Resume Upload / Document Preview Section */}
+      <AnimatePresence mode="wait">
+        {/* TAB 1: Profile & Resume Widget (Core Deliverable) */}
+        {activeTab === 'profile' && (
+          <motion.div
+            key="profile"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={SPRING_GENTLE}
+            className="space-y-8"
+          >
+            {/* Top Resume Upload / Document Preview Section */}
           <div ref={dropzoneRef} className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -944,14 +1006,19 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
             isSaving={isSavingProfile}
             onCancel={() => addToast('Profile edits reset to last saved state.', 'info')}
           />
-        </div>
+        </motion.div>
       )}
 
-      {/* --------------------------------------------------------------------- */}
       {/* TAB 2: Applications Tracker & Status Cards (Floor 11 Deliverable) */}
-      {/* --------------------------------------------------------------------- */}
       {activeTab === 'applications' && (
-        <div className="space-y-6 animate-fadeIn">
+        <motion.div
+          key="applications"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={SPRING_GENTLE}
+          className="space-y-6"
+        >
           {/* Controls Bar: Search & Stage Filtering */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
@@ -1081,14 +1148,19 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
               )}
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
-      {/* --------------------------------------------------------------------- */}
       {/* TAB 3: Interviews & Timeline */}
-      {/* --------------------------------------------------------------------- */}
       {activeTab === 'interviews' && (
-        <div className="space-y-6 animate-fadeIn">
+        <motion.div
+          key="interviews"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={SPRING_GENTLE}
+          className="space-y-6"
+        >
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 sm:p-8 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -1172,14 +1244,19 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
               </ul>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* --------------------------------------------------------------------- */}
       {/* TAB 4: Recommended Jobs */}
-      {/* --------------------------------------------------------------------- */}
       {activeTab === 'jobs' && (
-        <div className="space-y-6 animate-fadeIn">
+        <motion.div
+          key="jobs"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={SPRING_GENTLE}
+          className="space-y-6"
+        >
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 sm:p-8 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -1259,8 +1336,9 @@ const handleSaveProfile = async (updatedData: CandidateProfileData) => {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* --------------------------------------------------------------------- */}
       {/* Modal: Application Details Modal */}

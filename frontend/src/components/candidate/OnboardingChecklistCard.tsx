@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { OnboardingTask, OnboardingStats } from '../../services/onboardingService';
 import {
   CheckCircle2,
@@ -10,6 +11,7 @@ import {
   Calendar,
   Check,
 } from 'lucide-react';
+import { SPRING_GENTLE } from '../animations';
 
 export interface OnboardingChecklistCardProps {
   tasks: OnboardingTask[];
@@ -138,33 +140,43 @@ export const OnboardingChecklistCard: React.FC<OnboardingChecklistCardProps> = (
         {/* Visual Progress Bar */}
         <div className="space-y-1.5">
           <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200/60 p-0.5">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ease-out ${
+            <motion.div
+              initial={false}
+              animate={{ width: `${percentComplete}%` }}
+              transition={{ type: 'spring', damping: 20, stiffness: 120 }}
+              className={`h-full rounded-full ${
                 percentComplete === 100
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
                   : percentComplete >= 50
                   ? 'bg-gradient-to-r from-brand-500 to-indigo-600'
                   : 'bg-gradient-to-r from-amber-400 to-brand-500'
               }`}
-              style={{ width: `${percentComplete}%` }}
             />
           </div>
         </div>
 
         {/* 100% Complete Celebration Banner */}
-        {percentComplete === 100 && total > 0 && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-teal-500/15 border border-emerald-300 flex items-center gap-3 text-xs text-emerald-950 animate-fadeIn">
-            <div className="p-2 rounded-xl bg-emerald-600 text-white shrink-0">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-extrabold text-sm text-emerald-900">All onboarding tasks completed!</p>
-              <p className="text-emerald-800">
-                Your hiring team has been notified. You are all set for your official start date.
-              </p>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {percentComplete === 100 && total > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -8 }}
+              transition={SPRING_GENTLE}
+              className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-teal-500/15 border border-emerald-300 flex items-center gap-3 text-xs text-emerald-950"
+            >
+              <div className="p-2 rounded-xl bg-emerald-600 text-white shrink-0 shadow-xs">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-extrabold text-sm text-emerald-900">All onboarding tasks completed!</p>
+                <p className="text-emerald-800">
+                  Your hiring team has been notified. You are all set for your official start date.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Category Pills Filter */}
@@ -212,18 +224,22 @@ export const OnboardingChecklistCard: React.FC<OnboardingChecklistCardProps> = (
             const completedAtStr = task.completedAt || (task as any).completed_at;
 
             return (
-              <div
+              <motion.div
                 key={task.id}
+                layout
+                whileHover={{ y: -1, scale: 1.005 }}
+                transition={{ duration: 0.15 }}
                 onClick={() => !isToggling && handleToggle(task)}
                 className={`group p-4 sm:p-4.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-4 ${
                   isCompleted
-                    ? 'bg-emerald-50/30 border-emerald-200/60 hover:border-emerald-300'
+                    ? 'bg-emerald-50/40 border-emerald-200/80 hover:border-emerald-300'
                     : 'bg-white border-slate-200 hover:border-brand-300 hover:shadow-xs'
                 }`}
               >
                 {/* Custom Checkbox */}
-                <button
+                <motion.button
                   type="button"
+                  whileTap={{ scale: 0.85 }}
                   disabled={isToggling}
                   aria-label={isCompleted ? `Mark ${task.title} as incomplete` : `Mark ${task.title} as complete`}
                   className={`w-6 h-6 rounded-lg mt-0.5 flex items-center justify-center border-2 transition-all shrink-0 ${
@@ -233,7 +249,7 @@ export const OnboardingChecklistCard: React.FC<OnboardingChecklistCardProps> = (
                   }`}
                 >
                   <Check className={`w-3.5 h-3.5 stroke-[3] ${isCompleted ? 'opacity-100' : 'opacity-0'}`} />
-                </button>
+                </motion.button>
 
                 {/* Content */}
                 <div className="flex-1 space-y-1">
@@ -283,7 +299,7 @@ export const OnboardingChecklistCard: React.FC<OnboardingChecklistCardProps> = (
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })
         )}

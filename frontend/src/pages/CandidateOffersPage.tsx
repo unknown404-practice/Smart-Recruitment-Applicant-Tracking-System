@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CandidateOffer,
   OnboardingTask,
@@ -196,15 +197,15 @@ export const CandidateOffersPage: React.FC = () => {
         </Link>
       </div>
 
-      {/* Tabs */}
+      {/* Animated Sliding Tabs */}
       <div className="border-b border-slate-200">
         <nav className="flex space-x-4 sm:space-x-8">
           <button
             onClick={() => setActiveTab('offers')}
-            className={`py-3.5 px-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
+            className={`relative py-3.5 px-3 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'offers'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'text-brand-600'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <Gift className="w-4 h-4" />
@@ -217,14 +218,21 @@ export const CandidateOffersPage: React.FC = () => {
             {activeIssuedOffer && (
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
             )}
+            {activeTab === 'offers' && (
+              <motion.div
+                layoutId="offers-active-indicator"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600"
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              />
+            )}
           </button>
 
           <button
             onClick={() => setActiveTab('onboarding')}
-            className={`py-3.5 px-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
+            className={`relative py-3.5 px-3 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'onboarding'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'text-brand-600'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <ListTodo className="w-4 h-4" />
@@ -234,58 +242,78 @@ export const CandidateOffersPage: React.FC = () => {
                 {stats.completed}/{stats.total}
               </span>
             )}
+            {activeTab === 'onboarding' && (
+              <motion.div
+                layoutId="offers-active-indicator"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600"
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              />
+            )}
           </button>
         </nav>
       </div>
 
-      {/* Offers Tab Content */}
-      {activeTab === 'offers' && (
-        <div className="space-y-6">
-          {isLoading ? (
-            <div className="py-16 text-center text-sm text-slate-400">Loading offer details...</div>
-          ) : offers.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-center space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-50 text-slate-400 w-16 h-16 mx-auto flex items-center justify-center">
-                <Gift className="w-8 h-8" />
+      {/* Animated Tab Content Transition */}
+      <AnimatePresence mode="wait">
+        {activeTab === 'offers' ? (
+          <motion.div
+            key="offers-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6"
+          >
+            {isLoading ? (
+              <div className="py-16 text-center text-sm text-slate-400">Loading offer details...</div>
+            ) : offers.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-center space-y-4">
+                <div className="p-4 rounded-2xl bg-slate-50 text-slate-400 w-16 h-16 mx-auto flex items-center justify-center">
+                  <Gift className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-slate-800">No active offers issued yet</h3>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    When a company selects you for an offer, your formal compensation package and letter will appear here for review and digital signature.
+                  </p>
+                </div>
+                <Link to={ROUTES.JOBS}>
+                  <Button size="sm" className="text-xs font-bold gap-1 mt-2">
+                    Browse Open Positions
+                  </Button>
+                </Link>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-slate-800">No active offers issued yet</h3>
-                <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  When a company selects you for an offer, your formal compensation package and letter will appear here for review and digital signature.
-                </p>
-              </div>
-              <Link to={ROUTES.JOBS}>
-                <Button size="sm" className="text-xs font-bold gap-1 mt-2">
-                  Browse Open Positions
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            offers.map((offer) => (
-              <CandidateOfferReviewCard
-                key={offer.id}
-                offer={offer}
-                candidateName={candidateName}
-                onAcceptOffer={(signature) => handleAcceptOffer(offer.id, signature)}
-                onDeclineOffer={(reason) => handleDeclineOffer(offer.id, reason)}
-                onViewTasksClick={() => setActiveTab('onboarding')}
-              />
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Onboarding Tab Content */}
-      {activeTab === 'onboarding' && (
-        <div className="space-y-6">
-          <OnboardingChecklistCard
-            tasks={tasks}
-            stats={stats}
-            onToggleTask={handleToggleTask}
-            isLoading={isLoading}
-          />
-        </div>
-      )}
+            ) : (
+              offers.map((offer) => (
+                <CandidateOfferReviewCard
+                  key={offer.id}
+                  offer={offer}
+                  candidateName={candidateName}
+                  onAcceptOffer={(signature) => handleAcceptOffer(offer.id, signature)}
+                  onDeclineOffer={(reason) => handleDeclineOffer(offer.id, reason)}
+                  onViewTasksClick={() => setActiveTab('onboarding')}
+                />
+              ))
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="onboarding-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6"
+          >
+            <OnboardingChecklistCard
+              tasks={tasks}
+              stats={stats}
+              onToggleTask={handleToggleTask}
+              isLoading={isLoading}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

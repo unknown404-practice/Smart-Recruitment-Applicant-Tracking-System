@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { 
   ArrowLeft, 
   Building2, 
@@ -19,6 +20,7 @@ import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { JobRecord } from '../hooks/useJobs';
 import { JobApplicationModal } from '../components/candidate';
+import { SPRING_GENTLE } from '../components/animations';
 
 const STORAGE_APPLICATIONS_KEY = 'smart_ats_candidate_applications';
 
@@ -155,7 +157,12 @@ export const JobDetailPage: React.FC = () => {
       </div>
 
       {/* Hero Header Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={SPRING_GENTLE}
+        className="bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow p-6 sm:p-8 space-y-6"
+      >
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xl shrink-0 shadow-sm">
@@ -185,29 +192,35 @@ export const JobDetailPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleShare}
               className="p-2.5 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
               title="Share posting"
             >
               <Share2 className="w-4 h-4" />
-            </button>
+            </motion.button>
             
             {hasApplied ? (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => navigate(ROUTES.CANDIDATE)}
                 className="px-5 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 font-semibold text-sm rounded-lg shadow-2xs transition inline-flex items-center gap-2"
               >
                 <Check className="w-4 h-4 stroke-[2.5]" />
                 Applied • View Status
-              </button>
+              </motion.button>
             ) : (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={handleApply}
-                className="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow transition"
+                className="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow-md transition"
               >
                 Apply Now
-              </button>
+              </motion.button>
             )}
           </div>
         </div>
@@ -246,7 +259,7 @@ export const JobDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

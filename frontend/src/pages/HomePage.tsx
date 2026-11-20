@@ -15,8 +15,15 @@ import {
   Lock,
 } from 'lucide-react';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 import { Button, Badge, Modal, Input, Select, Logo } from '../components/ui';
 import { isEmulatorActive } from '../config/firebaseClient';
+import {
+  StaggerContainer,
+  StaggerItem,
+  MotionCard,
+  AnimatedNumber,
+} from '../components/animations';
 
 interface HealthData {
   status?: string;
@@ -62,118 +69,161 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="space-y-16 pb-16">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-brand-50/50 via-white to-slate-50 border-b border-slate-200 py-16 lg:py-20">
+      {/* Hero Section with Ambient Glow Orbs */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/60 via-white to-slate-50 border-b border-slate-200/80 py-16 lg:py-24">
+        {/* Subtle Ambient Background Orbs */}
+        <motion.div
+          animate={{
+            x: [0, 20, 0],
+            y: [0, -15, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[550px] h-[320px] bg-gradient-to-r from-emerald-200/30 via-brand-200/25 to-teal-200/20 rounded-full blur-3xl -z-10"
+        />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <div className="flex justify-center mb-1">
-            <Logo variant="horizontal" size="xl" className="drop-shadow-xs" />
-          </div>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-100/80 border border-brand-200 text-brand-800 text-xs font-semibold uppercase tracking-wider">
-            <Zap className="w-3.5 h-3.5 text-brand-600" />
-            Floor 3 Active — Schema & UI Primitives Integrated
-          </div>
+          <StaggerContainer className="flex flex-col items-center space-y-5">
+            <StaggerItem>
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                className="flex justify-center mb-1"
+              >
+                <Logo variant="horizontal" size="xl" className="drop-shadow-sm" />
+              </motion.div>
+            </StaggerItem>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight max-w-4xl mx-auto leading-tight">
-            Streamlined Hiring for High-Velocity Teams
-          </h1>
-
-          <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto">
-            Full-stack Applicant Tracking System engineered with Express, PostgreSQL 15, Firebase Auth Emulator, and React Vite.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <Link to={ROUTES.JOBS}>
-              <Button size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Explore Openings
-              </Button>
-            </Link>
-
-            <Link to={ROUTES.HR_PIPELINE}>
-              <Button variant="outline" size="lg" leftIcon={<Users className="w-5 h-5" />}>
-                HR Workspace
-              </Button>
-            </Link>
-
-            <Button
-              variant="secondary"
-              size="lg"
-              leftIcon={<Sparkles className="w-4 h-4 text-brand-600" />}
-              onClick={() => setDemoModalOpen(true)}
-            >
-              Test Day 3 Modal Primitive
-            </Button>
-          </div>
-
-          {/* System Connectivity Diagnostics Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 max-w-3xl mx-auto text-left">
-            {/* Backend API Probe */}
-            <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-slate-100 text-slate-700">
-                  <Server className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                    Express API
-                  </p>
-                  <p className="text-sm font-medium text-slate-800">
-                    {loadingHealth ? (
-                      <span className="text-slate-400">Pinging :5000...</span>
-                    ) : backendHealth ? (
-                      <span className="text-emerald-600 flex items-center gap-1 font-semibold">
-                        <CheckCircle2 className="w-4 h-4 inline" /> Online
-                      </span>
-                    ) : (
-                      <span className="text-amber-600 text-xs">{healthError}</span>
-                    )}
-                  </p>
-                </div>
+            <StaggerItem>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50/80 border border-emerald-200/70 text-emerald-800 text-xs font-semibold uppercase tracking-wider shadow-2xs backdrop-blur-xs">
+                <Zap className="w-3.5 h-3.5 text-emerald-600" />
+                Floor 19 Complete — Offer Acceptance & Onboarding System Live
               </div>
-              <span className="text-xs font-mono px-2 py-1 bg-slate-100 rounded text-slate-600">
-                :5000
-              </span>
-            </div>
+            </StaggerItem>
+
+            <StaggerItem>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight max-w-4xl mx-auto leading-tight">
+                Streamlined Hiring for <span className="bg-gradient-to-r from-brand-600 via-indigo-600 to-emerald-600 bg-clip-text text-transparent">High-Velocity Teams</span>
+              </h1>
+            </StaggerItem>
+
+            <StaggerItem>
+              <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                Enterprise-grade Applicant Tracking System engineered with Express, PostgreSQL, Firebase Auth Emulator, and React Vite.
+              </p>
+            </StaggerItem>
+
+            <StaggerItem>
+              <div className="flex flex-wrap items-center justify-center gap-4 pt-3">
+                <Link to={ROUTES.JOBS}>
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Button size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                      Explore Openings
+                    </Button>
+                  </motion.div>
+                </Link>
+
+                <Link to={ROUTES.HR_PIPELINE}>
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Button variant="outline" size="lg" leftIcon={<Users className="w-5 h-5" />}>
+                      HR Workspace
+                    </Button>
+                  </motion.div>
+                </Link>
+
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    leftIcon={<Sparkles className="w-4 h-4 text-brand-600" />}
+                    onClick={() => setDemoModalOpen(true)}
+                  >
+                    Interactive Modal Demo
+                  </Button>
+                </motion.div>
+              </div>
+            </StaggerItem>
+          </StaggerContainer>
+
+          {/* System Connectivity Diagnostics Bar with Motion Cards */}
+          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 max-w-3xl mx-auto text-left" delay={0.2}>
+            {/* Backend API Probe */}
+            <StaggerItem>
+              <MotionCard className="p-4 rounded-2xl bg-white/90 backdrop-blur border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700">
+                    <Server className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Express API
+                    </p>
+                    <p className="text-sm font-medium text-slate-800">
+                      {loadingHealth ? (
+                        <span className="text-slate-400">Pinging :5000...</span>
+                      ) : backendHealth ? (
+                        <span className="text-emerald-600 flex items-center gap-1 font-semibold">
+                          <CheckCircle2 className="w-4 h-4 inline" /> Online
+                        </span>
+                      ) : (
+                        <span className="text-amber-600 text-xs">{healthError}</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-mono px-2.5 py-1 bg-slate-100/90 rounded-md text-slate-600 font-semibold border border-slate-200/50">
+                  :5000
+                </span>
+              </MotionCard>
+            </StaggerItem>
 
             {/* PostgreSQL Database Schema */}
-            <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700">
-                  <Database className="w-5 h-5" />
+            <StaggerItem>
+              <MotionCard className="p-4 rounded-2xl bg-white/90 backdrop-blur border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700">
+                    <Database className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      PostgreSQL Engine
+                    </p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      12 Migrations Active
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                    PostgreSQL Schema
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    Day 2 & 3 Migrations
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-mono px-2 py-1 bg-emerald-50 text-emerald-700 rounded font-semibold">
-                7 Tables
-              </span>
-            </div>
+                <span className="text-xs font-mono px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md font-bold border border-emerald-200/60">
+                  <AnimatedNumber value={12} suffix=" SQL" />
+                </span>
+              </MotionCard>
+            </StaggerItem>
 
             {/* Firebase Auth Emulator */}
-            <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-50 text-purple-700">
-                  <Lock className="w-5 h-5" />
+            <StaggerItem>
+              <MotionCard className="p-4 rounded-2xl bg-white/90 backdrop-blur border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Auth Emulator
+                    </p>
+                    <p className="text-sm font-semibold text-purple-700 flex items-center gap-1">
+                      <CheckCircle2 className="w-4 h-4 inline" /> {isEmulatorActive() ? 'Connected' : 'Configured'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                    Auth Emulator
-                  </p>
-                  <p className="text-sm font-semibold text-purple-700 flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4 inline" /> {isEmulatorActive() ? 'Connected' : 'Configured'}
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-mono px-2 py-1 bg-purple-50 text-purple-700 rounded font-semibold">
-                :9099
-              </span>
-            </div>
-          </div>
+                <span className="text-xs font-mono px-2.5 py-1 bg-purple-50 text-purple-700 rounded-md font-bold border border-purple-200/60">
+                  :9099
+                </span>
+              </MotionCard>
+            </StaggerItem>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -331,52 +381,64 @@ export const HomePage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <Briefcase className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900">Candidate Experience</h3>
-            <p className="text-sm text-slate-600">
-              Frictionless application submission, resume upload with 5 MB quota, and real-time application stage tracking.
-            </p>
-            <div className="pt-2">
-              <Link to={ROUTES.CANDIDATE} className="text-sm font-semibold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1">
-                View Candidate Portal <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <StaggerItem>
+            <MotionCard className="bg-white/95 backdrop-blur p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 h-full flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold mb-3 shadow-2xs">
+                  <Briefcase className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Candidate Experience</h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  Frictionless application submission, resume upload with 5 MB quota, and real-time application stage tracking.
+                </p>
+              </div>
+              <div className="pt-4">
+                <Link to={ROUTES.CANDIDATE} className="text-sm font-semibold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1.5 group">
+                  View Candidate Portal <ArrowRight className="w-3.5 h-3.5 transition group-hover:translate-x-1" />
+                </Link>
+              </div>
+            </MotionCard>
+          </StaggerItem>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 text-brand-600 flex items-center justify-center font-bold">
-              <Users className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900">HR Hiring Pipeline</h3>
-            <p className="text-sm text-slate-600">
-              Interactive Kanban board with 6 stages: Applied, Screening, Interview, Selected, Offered, and Rejected.
-            </p>
-            <div className="pt-2">
-              <Link to={ROUTES.HR_PIPELINE} className="text-sm font-semibold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1">
-                Open Pipeline Board <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
+          <StaggerItem>
+            <MotionCard className="bg-white/95 backdrop-blur p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 h-full flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-brand-600 flex items-center justify-center font-bold mb-3 shadow-2xs">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">HR Hiring Pipeline</h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  Interactive Kanban board with 6 stages: Applied, Screening, Interview, Selected, Offered, and Rejected.
+                </p>
+              </div>
+              <div className="pt-4">
+                <Link to={ROUTES.HR_PIPELINE} className="text-sm font-semibold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1.5 group">
+                  Open Pipeline Board <ArrowRight className="w-3.5 h-3.5 transition group-hover:translate-x-1" />
+                </Link>
+              </div>
+            </MotionCard>
+          </StaggerItem>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900">Admin Governance</h3>
-            <p className="text-sm text-slate-600">
-              User and company management, role assignment with custom claims, and system-wide audit activity feed.
-            </p>
-            <div className="pt-2">
-              <Link to={ROUTES.ADMIN} className="text-sm font-semibold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1">
-                Manage Organization <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        </div>
+          <StaggerItem>
+            <MotionCard className="bg-white/95 backdrop-blur p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 h-full flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold mb-3 shadow-2xs">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Admin Governance</h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  User and company management, role assignment with custom claims, and system-wide audit activity feed.
+                </p>
+              </div>
+              <div className="pt-4">
+                <Link to={ROUTES.ADMIN} className="text-sm font-semibold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1.5 group">
+                  Manage Organization <ArrowRight className="w-3.5 h-3.5 transition group-hover:translate-x-1" />
+                </Link>
+              </div>
+            </MotionCard>
+          </StaggerItem>
+        </StaggerContainer>
       </section>
 
       {/* Interactive Day 3 Modal Primitive Dialog */}

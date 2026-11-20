@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { SPRING_GENTLE } from '../animations';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -43,8 +45,6 @@ export const Modal: React.FC<ModalProps> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-lg',
@@ -53,47 +53,59 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop overlay */}
-      <div
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Animated Backdrop overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+            onClick={onClose}
+            aria-hidden="true"
+          />
 
-      <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-        <div
-          role="dialog"
-          aria-modal="true"
-          className={`relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full ${sizeClasses[size]} border border-slate-200`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between p-5 border-b border-slate-200">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 leading-6">{title}</h3>
-              {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
-            </div>
-            <button
-              onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition focus:outline-none"
-              aria-label="Close modal"
+          <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={SPRING_GENTLE}
+              className={`relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full ${sizeClasses[size]} border border-slate-200/90 z-10`}
+              onClick={(e) => e.stopPropagation()}
             >
-              <X className="w-5 h-5" />
-            </button>
+              {/* Header */}
+              <div className="flex items-start justify-between p-5 border-b border-slate-100 bg-slate-50/50">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 leading-6">{title}</h3>
+                  {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
+                </div>
+                <button
+                  onClick={onClose}
+                  className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition focus:outline-none"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body Content */}
+              <div className="p-6">{children}</div>
+
+              {/* Optional Footer Actions */}
+              {footer && (
+                <div className="bg-slate-50/80 px-6 py-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                  {footer}
+                </div>
+              )}
+            </motion.div>
           </div>
-
-          {/* Body Content */}
-          <div className="p-6">{children}</div>
-
-          {/* Optional Footer Actions */}
-          {footer && (
-            <div className="bg-slate-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-slate-200">
-              {footer}
-            </div>
-          )}
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 };

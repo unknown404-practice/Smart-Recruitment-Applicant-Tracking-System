@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { CandidateOffer } from '../../services/onboardingService';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -51,7 +52,12 @@ export const CandidateOfferReviewCard: React.FC<CandidateOfferReviewCardProps> =
     rawExpiry && status === 'ISSUED' && new Date(rawExpiry).getTime() - Date.now() < 3 * 86400000;
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden transition-all hover:border-slate-300">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2, transition: { duration: 0.15 } }}
+      className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden transition-all hover:border-brand-200 hover:shadow-md"
+    >
       {/* Top Banner & Header */}
       <div className="p-6 sm:p-7 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -273,6 +279,6 @@ export const CandidateOfferReviewCard: React.FC<CandidateOfferReviewCardProps> =
         offer={offer}
         onConfirmDecline={onDeclineOffer}
       />
-    </div>
+    </motion.div>
   );
 };
