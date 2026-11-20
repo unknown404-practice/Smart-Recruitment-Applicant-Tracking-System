@@ -114,18 +114,7 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       mockClientQuery
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({ rows: [mockCandidateAUserRow] }) // caller lookup
         .mockResolvedValueOnce({ rows: [mockIssuedOfferRow] }) // lock offer
-        .mockResolvedValueOnce({
-          rows: [
-            {
-              ...mockIssuedOfferRow,
-              status: 'ACCEPTED',
-              accepted_at: new Date(),
-              responded_at: new Date(),
-            },
-          ],
-        }) // update offer
         .mockResolvedValueOnce({
           rows: [
             {
@@ -184,6 +173,16 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
             },
           ],
         }) // auto-spawn onboarding tasks
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              ...mockIssuedOfferRow,
+              status: 'ACCEPTED',
+              accepted_at: new Date(),
+              responded_at: new Date(),
+            },
+          ],
+        }) // update offer
         .mockResolvedValueOnce({}) // notification event
         .mockResolvedValueOnce({}); // COMMIT
 
@@ -216,8 +215,16 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       mockClientQuery
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({ rows: [mockCandidateAUserRow] }) // caller lookup
         .mockResolvedValueOnce({ rows: [mockIssuedOfferRow] }) // lock offer
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: appId,
+              current_stage: 'REJECTED',
+            },
+          ],
+        }) // update application
+        .mockResolvedValueOnce({}) // insert stage history
         .mockResolvedValueOnce({
           rows: [
             {
@@ -229,15 +236,6 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
             },
           ],
         }) // update offer
-        .mockResolvedValueOnce({
-          rows: [
-            {
-              id: appId,
-              current_stage: 'REJECTED',
-            },
-          ],
-        }) // update application
-        .mockResolvedValueOnce({}) // insert stage history
         .mockResolvedValueOnce({}) // notification event
         .mockResolvedValueOnce({}); // COMMIT
 
@@ -264,7 +262,6 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       mockClientQuery
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({ rows: [mockCandidateBUserRow] }) // caller lookup
         .mockResolvedValueOnce({ rows: [mockIssuedOfferRow] }) // lock offer (belongs to candidate A)
         .mockResolvedValueOnce({}); // ROLLBACK
 
@@ -292,9 +289,6 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       mockClientQuery
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({
-          rows: [{ id: 'hr-user-id', role: 'HR', company_id: companyId }],
-        })
         .mockResolvedValueOnce({ rows: [mockIssuedOfferRow] })
         .mockResolvedValueOnce({}); // ROLLBACK
 
@@ -320,9 +314,6 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       mockClientQuery
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({
-          rows: [{ id: 'admin-b-id', role: 'ADMIN', company_id: foreignCompanyId }],
-        })
         .mockResolvedValueOnce({ rows: [mockIssuedOfferRow] }) // mockIssuedOfferRow belongs to companyId
         .mockResolvedValueOnce({}); // ROLLBACK
 
@@ -378,7 +369,6 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       mockClientQuery
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({ rows: [mockCandidateAUserRow] })
         .mockResolvedValueOnce({ rows: [alreadyAcceptedRow] })
         .mockResolvedValueOnce({}); // ROLLBACK
 
@@ -401,7 +391,6 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       mockClientQuery
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({ rows: [mockCandidateAUserRow] })
         .mockResolvedValueOnce({ rows: [draftOfferRow] })
         .mockResolvedValueOnce({}); // ROLLBACK
 
@@ -424,7 +413,6 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       mockClientQuery
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({ rows: [mockCandidateAUserRow] })
         .mockResolvedValueOnce({ rows: [expiredOfferRow] })
         .mockResolvedValueOnce({}); // ROLLBACK
 
@@ -442,7 +430,6 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       mockClientQuery
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({ rows: [mockCandidateAUserRow] })
         .mockResolvedValueOnce({ rows: [] }) // not found
         .mockResolvedValueOnce({}); // ROLLBACK
 

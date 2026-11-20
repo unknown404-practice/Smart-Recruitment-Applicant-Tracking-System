@@ -4,7 +4,15 @@ const mockClientQuery = jest.fn();
 const mockClientRelease = jest.fn();
 
 const mockClient = {
-  query: mockClientQuery,
+  query: jest.fn().mockImplementation(async (sql: any, ...args: any[]) => {
+    const sqlStr = typeof sql === 'string' ? sql.trim().toUpperCase() : '';
+    if (sqlStr === 'BEGIN' || sqlStr === 'COMMIT' || sqlStr === 'ROLLBACK') {
+      return { rows: [] };
+    }
+    const res = await mockClientQuery(sql, ...args);
+    if (res !== undefined) return res;
+    return mockQuery(sql, ...args);
+  }),
   release: mockClientRelease,
 };
 
