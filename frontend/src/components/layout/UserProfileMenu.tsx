@@ -176,6 +176,7 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({ user, onLogout
             <button
               type="button"
               onClick={() => {
+                setDropdownOpen(false);
                 setLogoutModalOpen(true);
               }}
               className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition"
