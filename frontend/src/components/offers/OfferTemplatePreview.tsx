@@ -151,15 +151,16 @@ export const OfferTemplatePreview: React.FC<OfferTemplatePreviewProps> = ({
       </div>
 
       {/* Canvas Paper Viewport Area */}
-      <div className="flex-1 overflow-auto p-2 sm:p-6 lg:p-8 flex justify-center items-start">
-        <div
-          style={{
-            transform: `scale(${zoomLevel / 100})`,
-            transformOrigin: 'top center',
-            transition: 'transform 0.15s ease-out',
-          }}
-          className="w-full max-w-3xl bg-white rounded-xl shadow-xl border border-slate-200/90 text-slate-900 relative p-4 sm:p-8 lg:p-12 transition-all print:shadow-none print:border-none print:p-0 print:m-0"
-        >
+      <div className="flex-1 overflow-auto overflow-x-auto p-2 sm:p-6 lg:p-8 flex justify-center items-start">
+        <div className="w-full flex justify-center min-w-[320px]">
+          <div
+            style={{
+              transform: `scale(${zoomLevel / 100})`,
+              transformOrigin: 'top center',
+              transition: 'transform 0.15s ease-out',
+            }}
+            className="w-full max-w-3xl bg-white rounded-xl shadow-xl border border-slate-200/90 text-slate-900 relative p-4 sm:p-8 lg:p-12 transition-all print:shadow-none print:border-none print:p-0 print:m-0"
+          >
           {/* Watermark Overlay */}
           {showWatermark && (
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-10 select-none opacity-5">
@@ -480,6 +481,7 @@ export const OfferTemplatePreview: React.FC<OfferTemplatePreviewProps> = ({
               </div>
             </div>
           </footer>
+        </div>
         </div>
       </div>
     </div>

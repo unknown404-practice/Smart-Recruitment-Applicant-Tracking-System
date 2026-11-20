@@ -175,12 +175,13 @@ export const IssueOfferModal: React.FC<IssueOfferModalProps> = ({
           </div>
 
           {/* Footer Controls */}
-          <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
+          <div className="bg-slate-50 px-4 sm:px-6 py-4 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3">
             <Button
               variant="outline"
               size="md"
               onClick={onClose}
               disabled={isSubmitting}
+              className="justify-center"
             >
               Cancel
             </Button>
@@ -191,6 +192,7 @@ export const IssueOfferModal: React.FC<IssueOfferModalProps> = ({
               isLoading={isSubmitting}
               disabled={!acceptedDisclaimer}
               leftIcon={<Send className="w-4 h-4" />}
+              className="justify-center"
             >
               Confirm & Issue Offer
             </Button>

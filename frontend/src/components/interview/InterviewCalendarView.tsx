@@ -157,24 +157,25 @@ export const InterviewCalendarView: React.FC<InterviewCalendarViewProps> = ({
       </div>
 
       {/* Monthly Calendar Grid */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
-        {/* Days of Week Header */}
-        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/70 text-center text-xs font-bold text-slate-600 py-3">
-          <span>Sun</span>
-          <span>Mon</span>
-          <span>Tue</span>
-          <span>Wed</span>
-          <span>Thu</span>
-          <span>Fri</span>
-          <span>Sat</span>
-        </div>
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden overflow-x-auto">
+        <div className="min-w-[640px] md:min-w-0">
+          {/* Days of Week Header */}
+          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/70 text-center text-xs font-bold text-slate-600 py-3">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+          </div>
 
-        {/* Days Grid Cells */}
-        <div
-          role="grid"
-          aria-label={`${monthNames[month]} ${year} Interview Calendar`}
-          className="grid grid-cols-7 divide-x divide-y divide-slate-100"
-        >
+          {/* Days Grid Cells */}
+          <div
+            role="grid"
+            aria-label={`${monthNames[month]} ${year} Interview Calendar`}
+            className="grid grid-cols-7 divide-x divide-y divide-slate-100"
+          >
           {calendarCells.map((cell, idx) => {
             const dayEvents = interviewsByDate[cell.dateStr] || [];
             const isSelected = cell.dateStr === selectedDateStr;
@@ -246,6 +247,7 @@ export const InterviewCalendarView: React.FC<InterviewCalendarViewProps> = ({
               </div>
             );
           })}
+          </div>
         </div>
       </div>
 

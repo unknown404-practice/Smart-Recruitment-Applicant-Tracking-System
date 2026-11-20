@@ -106,7 +106,7 @@ export const useOffers = () => {
           response.data?.message || 'Offer draft created successfully.',
           'Offer saved'
         );
-        await fetchOffers();
+        await Promise.all([fetchOffers(), fetchApplications()]);
         return response.data?.data as OfferRecord;
       } catch (err: any) {
         const message = getErrorMessage(err);
@@ -116,7 +116,7 @@ export const useOffers = () => {
         setSubmitting(false);
       }
     },
-    [fetchOffers, showSuccess, showError]
+    [fetchOffers, fetchApplications, showSuccess, showError]
   );
 
   const issueOffer = useCallback(
@@ -129,7 +129,7 @@ export const useOffers = () => {
           response.data?.message || 'Offer issued successfully.',
           'Offer issued'
         );
-        await fetchOffers();
+        await Promise.all([fetchOffers(), fetchApplications()]);
         return response.data;
       } catch (err: any) {
         const message = getErrorMessage(err);
@@ -139,7 +139,7 @@ export const useOffers = () => {
         setIssuingId(null);
       }
     },
-    [fetchOffers, showSuccess, showError]
+    [fetchOffers, fetchApplications, showSuccess, showError]
   );
 
   return {

@@ -381,6 +381,50 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
       expect(res.body.error.message).toMatch(/already been accepted/i);
     });
 
+    it('rejects double offer acceptance when candidate application is already HIRED with 400 Bad Request', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(candidateAToken);
+
+      const alreadyHiredAppRow = {
+        ...mockIssuedOfferRow,
+        current_stage: 'HIRED',
+      };
+
+      mockClientQuery
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [alreadyHiredAppRow] })
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      const res = await request(app)
+        .post(`/api/offers/${offerId}/respond`)
+        .set('Authorization', 'Bearer valid-token')
+        .send({ action: 'ACCEPT' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toMatch(/already been marked as hired/i);
+    });
+
+    it('rejects responding to offer when candidate application is marked REJECTED with 400 Bad Request', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(candidateAToken);
+
+      const rejectedAppRow = {
+        ...mockIssuedOfferRow,
+        current_stage: 'REJECTED',
+      };
+
+      mockClientQuery
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [rejectedAppRow] })
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      const res = await request(app)
+        .post(`/api/offers/${offerId}/respond`)
+        .set('Authorization', 'Bearer valid-token')
+        .send({ action: 'ACCEPT' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toMatch(/application has been marked as rejected/i);
+    });
+
     it('rejects responding to a DRAFT offer that has not been officially issued with 400 Bad Request', async () => {
       mockVerifyFirebaseIdToken.mockResolvedValue(candidateAToken);
 

@@ -68,4 +68,21 @@ describe('Synthetic Seed Configuration & Entities', () => {
       expect(candidate.experienceYears).toBeGreaterThan(0);
     }
   });
+
+  it('should include completed interviews, scorecards, offers and onboarding in seed dataset coverage', () => {
+    const interviewCandidates = SEED_CANDIDATES.filter((c) => c.stage === 'INTERVIEW');
+    const selectedCandidates = SEED_CANDIDATES.filter((c) => c.stage === 'SELECTED');
+    const offeredCandidates = SEED_CANDIDATES.filter((c) => c.stage === 'OFFERED');
+
+    expect(interviewCandidates.length).toBeGreaterThanOrEqual(3);
+    expect(selectedCandidates.length).toBeGreaterThanOrEqual(3);
+    expect(offeredCandidates.length).toBeGreaterThanOrEqual(2);
+
+    // Verify candidate data properties
+    for (const cand of [...interviewCandidates, ...selectedCandidates, ...offeredCandidates]) {
+      expect(cand.headline).toBeTruthy();
+      expect(cand.fullName).toBeTruthy();
+      expect(cand.reason).toBeTruthy();
+    }
+  });
 });

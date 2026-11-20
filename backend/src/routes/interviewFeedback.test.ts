@@ -337,6 +337,33 @@ describe('Interview Rescheduling & Scorecard Feedback APIs (/api/interviews)', (
       expect(res.status).toBe(400);
     });
 
+    it('should reject feedback submission on cancelled interviews with 400', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValueOnce(interviewerToken);
+
+      mockClientQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'interviewer-user-id', company_id: companyAId, role: 'INTERVIEWER', is_active: true }] }) // caller
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: interviewId,
+              application_id: applicationId,
+              interviewer_id: interviewerId,
+              status: 'CANCELLED',
+              job_company_id: companyAId,
+            },
+          ],
+        }); // existing interview is CANCELLED
+
+      const res = await request(app)
+        .post(`/api/interviews/${interviewId}/feedback`)
+        .set('Authorization', 'Bearer valid-interviewer-token')
+        .send(validFeedbackBody);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toContain('Cannot evaluate a cancelled interview');
+      expect(mockClientRelease).toHaveBeenCalled();
+    });
+
     it('should submit scorecard successfully and transition interview to COMPLETED', async () => {
       mockVerifyFirebaseIdToken.mockResolvedValueOnce(interviewerToken);
 

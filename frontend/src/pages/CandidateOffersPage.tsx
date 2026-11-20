@@ -198,8 +198,8 @@ export const CandidateOffersPage: React.FC = () => {
       </div>
 
       {/* Animated Sliding Tabs */}
-      <div className="border-b border-slate-200">
-        <nav className="flex space-x-4 sm:space-x-8">
+      <div className="border-b border-slate-200 overflow-x-auto no-scrollbar">
+        <nav className="flex space-x-4 sm:space-x-8 min-w-max">
           <button
             onClick={() => setActiveTab('offers')}
             className={`relative py-3.5 px-3 font-bold text-sm whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${

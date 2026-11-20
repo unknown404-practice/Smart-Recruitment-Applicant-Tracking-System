@@ -180,19 +180,19 @@ export const CandidateOfferReviewCard: React.FC<CandidateOfferReviewCardProps> =
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Review formal legal terms and submit your digital signature to confirm.</span>
           </div>
-          <div className="flex items-center gap-3 self-end sm:self-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsDeclineModalOpen(true)}
-              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 text-xs font-bold"
+              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 text-xs font-bold justify-center"
             >
               Decline Offer
             </Button>
             <Button
               size="sm"
               onClick={() => setIsAcceptModalOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm gap-1.5"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm gap-1.5 justify-center"
             >
               <CheckCircle2 className="w-4 h-4" />
               Accept Offer

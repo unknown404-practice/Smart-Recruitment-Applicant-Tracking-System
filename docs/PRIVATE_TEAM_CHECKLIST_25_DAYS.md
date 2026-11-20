@@ -365,15 +365,15 @@ Establish Schema / API Contract               Build UI & State using Mock Data (
 ---
 
 #### 🔹 Day 21 (Floor 21): Week 3 Milestone Verification & Seed Expansion
-* [ ] **Cloud:** `feat(seed): add interviews feedback offers and onboarding records to seed`
+* [x] **Cloud:** `feat(seed): add interviews feedback offers and onboarding records to seed`
   * Update `seed.ts` with completed interviews, scorecards, issued/accepted offers, and onboarding tasks.
-* [ ] **Backend:** `fix(backend): harden edge cases on interview and offer state transitions`
+* [x] **Backend:** `fix(backend): harden edge cases on interview and offer state transitions`
   * Audit and patch edge cases (double offer acceptances, feedback on cancelled interviews).
-* [ ] **Frontend 1:** `style(ui): refine responsive layout for interview calendar and offer views`
+* [x] **Frontend 1:** `style(ui): refine responsive layout for interview calendar and offer views`
   * Polish mobile/tablet viewports for calendar, offer preview, and onboarding checklist.
-* [ ] **Frontend 2:** `fix(ui): audit interview and offer cache invalidation rules`
+* [x] **Frontend 2:** `fix(ui): audit interview and offer cache invalidation rules`
   * Ensure cache invalidation immediately updates UI badges when offers or interviews change.
-* [ ] **Leader / DevOps:** `ci(release): run week 3 regression suite and tag v0.3.0-week3`
+* [x] **Leader / DevOps:** `ci(release): run week 3 regression suite and tag v0.3.0-week3`
   * Run complete Week 1–3 regression test suite in CI and tag release `v0.3.0-week3`.
 * **Daily Done Criteria:** All regression tests green; release tag `v0.3.0-week3` pushed to GitHub.
 

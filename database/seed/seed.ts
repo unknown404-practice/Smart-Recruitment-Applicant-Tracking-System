@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { pool } from '../../backend/src/config/database';
 import { adminAuth } from '../../backend/src/config/firebaseAdmin';
 import { ensureStorageDirectory, getSafeStoragePath } from '../../backend/src/config/storage';
+import { generateOfferLetterHtml } from '../../backend/src/services/offerTemplateService';
 
 export const DEMO_COMPANY = {
   id: 'a0000000-0000-0000-0000-000000000001',
@@ -601,6 +602,225 @@ export async function runSeed(options: { closePool?: boolean } = { closePool: tr
           [applicationId, prevStage, stageItem, actor, histReason]
         );
         prevStage = stageItem;
+      }
+
+      // 4f. Seed Week 3 Records (Interviews, Scorecards, Offers, Onboarding Tasks, Activity Traces)
+      if (cand.stage === 'INTERVIEW' || cand.stage === 'SELECTED' || cand.stage === 'OFFERED') {
+        const interviewStatus = cand.stage === 'INTERVIEW' ? 'SCHEDULED' : 'COMPLETED';
+        const startOffsetHours = cand.stage === 'INTERVIEW' ? 24 : -48;
+        const endOffsetHours = cand.stage === 'INTERVIEW' ? 25 : -47;
+
+        // Clean existing interviews for this application (idempotency)
+        await client.query('DELETE FROM interview_events WHERE application_id = $1', [applicationId]);
+
+        const interviewRes = await client.query(
+          `
+          INSERT INTO interview_events (
+            application_id, interviewer_id, title, description, scheduled_start, scheduled_end,
+            location_or_link, status, reschedule_count, created_by, created_at, updated_at
+          )
+          VALUES (
+            $1, $2, $3, $4, NOW() + INTERVAL '${startOffsetHours} hours', NOW() + INTERVAL '${endOffsetHours} hours',
+            $5, $6, 0, $7, NOW() - INTERVAL '3 days', NOW() - INTERVAL '1 day'
+          )
+          RETURNING id;
+          `,
+          [
+            applicationId,
+            creatorId,
+            `${cand.headline} - Technical & Architectural Evaluation`,
+            `Deep dive evaluation on TypeScript, React architecture, systems design, and performance optimizations.`,
+            `https://meet.smart-ats.internal/room/interview-${cand.firebaseUid}`,
+            interviewStatus,
+            creatorId,
+          ]
+        );
+        const interviewId = interviewRes.rows[0].id;
+
+        // Audit log for interview
+        await client.query(
+          `
+          INSERT INTO interview_audit_log (
+            interview_id, action, actor_id, reason, metadata, created_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, NOW() - INTERVAL '2 days'
+          );
+          `,
+          [
+            interviewId,
+            interviewStatus === 'COMPLETED' ? 'COMPLETED' : 'SCHEDULED',
+            creatorId,
+            interviewStatus === 'COMPLETED' ? 'Candidate successfully completed interview loop' : 'Interview loop scheduled with panel',
+            JSON.stringify({ scheduled_by: 'Staff Panel', room: `interview-${cand.firebaseUid}` }),
+          ]
+        );
+
+        // Scorecard for completed interviews (SELECTED or OFFERED)
+        if (interviewStatus === 'COMPLETED') {
+          const rating = cand.stage === 'OFFERED' ? 5 : 4;
+          const recommendation = cand.stage === 'OFFERED' ? 'STRONG_HIRE' : 'HIRE';
+
+          await client.query(
+            `
+            INSERT INTO interview_scorecards (
+              interview_id, evaluator_id, rating, recommendation, strengths, concerns, confidential_notes, created_at, updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, NOW() - INTERVAL '36 hours', NOW() - INTERVAL '36 hours'
+            )
+            ON CONFLICT (interview_id, evaluator_id) DO UPDATE SET
+              rating = EXCLUDED.rating,
+              recommendation = EXCLUDED.recommendation,
+              updated_at = NOW();
+            `,
+            [
+              interviewId,
+              creatorId,
+              rating,
+              recommendation,
+              `Exemplary proficiency in ${cand.skills.slice(0, 3).join(', ')}. Strong architectural clarity and communication.`,
+              cand.stage === 'OFFERED' ? 'None noted. Exceptional candidate fit.' : 'Minor follow-up recommended on cloud cost optimizations.',
+              `Evaluator scorecard recorded: ${recommendation}. Verified for hire progression.`,
+            ]
+          );
+
+          await client.query(
+            `
+            INSERT INTO interview_audit_log (
+              interview_id, action, actor_id, reason, metadata, created_at
+            ) VALUES (
+              $1, 'SCORECARD_SUBMITTED', $2, $3, $4, NOW() - INTERVAL '35 hours'
+            );
+            `,
+            [
+              interviewId,
+              creatorId,
+              `Scorecard submitted with recommendation: ${recommendation}`,
+              JSON.stringify({ rating, recommendation }),
+            ]
+          );
+        }
+      }
+
+      // Offers & Onboarding Tasks (for OFFERED stage candidates)
+      if (cand.stage === 'OFFERED') {
+        // Clean existing offers for this application (idempotency)
+        await client.query('DELETE FROM offer_records WHERE application_id = $1', [applicationId]);
+
+        const salaryAmount = 145000 + cand.index * 2500;
+        const offerHtml = generateOfferLetterHtml({
+          candidateName: cand.fullName,
+          candidateEmail: cand.email,
+          jobTitle: DEMO_JOB.title,
+          companyName: DEMO_COMPANY.name,
+          salaryAmount,
+          currency: 'USD',
+          startDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        });
+
+        const isAcceptedCandidate = cand.index === 18; // Hannah Schmidt has accepted her offer
+        const offerStatus = isAcceptedCandidate ? 'ACCEPTED' : 'ISSUED';
+        const acceptedAt = isAcceptedCandidate ? 'NOW() - INTERVAL \'6 hours\'' : 'NULL';
+        const respondedAt = isAcceptedCandidate ? 'NOW() - INTERVAL \'6 hours\'' : 'NULL';
+
+        const offerRes = await client.query(
+          `
+          INSERT INTO offer_records (
+            application_id, salary_amount, currency, start_date, offer_letter_html,
+            status, issued_at, accepted_at, responded_at, expires_at, created_by, created_at, updated_at
+          ) VALUES (
+            $1, $2, 'USD', CURRENT_DATE + 30, $3,
+            $4, NOW() - INTERVAL '24 hours', ${acceptedAt}, ${respondedAt}, CURRENT_DATE + 14, $5, NOW() - INTERVAL '24 hours', NOW()
+          )
+          RETURNING id;
+          `,
+          [applicationId, salaryAmount, offerHtml, offerStatus, creatorId]
+        );
+        const offerId = offerRes.rows[0].id;
+
+        // If candidate accepted offer, transition application to HIRED with stage history
+        if (isAcceptedCandidate) {
+          await client.query(
+            `UPDATE applications
+             SET current_stage = 'HIRED', hired_at = NOW() - INTERVAL '6 hours', updated_at = NOW()
+             WHERE id = $1;`,
+            [applicationId]
+          );
+
+          await client.query(
+            `INSERT INTO application_stage_history (
+               application_id, from_stage, to_stage, changed_by, reason, created_at
+             ) VALUES (
+               $1, 'OFFERED', 'HIRED', $2, 'Candidate accepted employment offer letter with digital signature', NOW() - INTERVAL '6 hours'
+             );`,
+            [applicationId, creatorId]
+          );
+        }
+
+        // Clean existing onboarding tasks for this candidate
+        await client.query('DELETE FROM onboarding_tasks WHERE candidate_id = $1', [profileId]);
+
+        // Provision Onboarding Tasks
+        const onboardingTasksData = [
+          {
+            title: 'Complete Government I-9 & Identity Verification',
+            description: 'Upload valid passport or state ID along with work eligibility documentation.',
+            category: 'COMPLIANCE',
+            isCompleted: isAcceptedCandidate,
+            completedAt: isAcceptedCandidate ? 'NOW() - INTERVAL \'4 hours\'' : 'NULL',
+          },
+          {
+            title: 'Direct Deposit & Payroll Tax Forms',
+            description: 'Submit W-4 election and bank routing/account details for direct deposit payroll.',
+            category: 'FINANCE',
+            isCompleted: isAcceptedCandidate,
+            completedAt: isAcceptedCandidate ? 'NOW() - INTERVAL \'2 hours\'' : 'NULL',
+          },
+          {
+            title: 'Development Laptop & Workspace Ergonomics Selection',
+            description: 'Select Apple MacBook Pro M3 Max or Dell Precision workstation and peripheral monitor bundle.',
+            category: 'EQUIPMENT',
+            isCompleted: false,
+            completedAt: 'NULL',
+          },
+          {
+            title: 'Sign Non-Disclosure & Intellectual Property Agreement',
+            description: 'Review and digitally execute corporate confidentiality and code ownership covenants.',
+            category: 'LEGAL',
+            isCompleted: isAcceptedCandidate,
+            completedAt: isAcceptedCandidate ? 'NOW() - INTERVAL \'5 hours\'' : 'NULL',
+          },
+        ];
+
+        for (const t of onboardingTasksData) {
+          await client.query(
+            `
+            INSERT INTO onboarding_tasks (
+              candidate_id, offer_id, application_id, title, description, category, is_completed, due_date, completed_at, created_at, updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, CURRENT_DATE + 14, ${t.completedAt}, NOW() - INTERVAL '20 hours', NOW()
+            );
+            `,
+            [profileId, offerId, applicationId, t.title, t.description, t.category, t.isCompleted]
+          );
+        }
+
+        // Notification event for offer issuance
+        await client.query(
+          `
+          INSERT INTO notification_events (
+            recipient_user_id, channel, event_type, subject, content_body, status, created_at
+          ) VALUES (
+            $1, 'EMAIL', $2, $3, $4, 'SENT', NOW() - INTERVAL '24 hours'
+          );
+          `,
+          [
+            userId,
+            isAcceptedCandidate ? 'OFFER_ACCEPTED' : 'OFFER_ISSUED',
+            `Official Employment Offer - ${DEMO_JOB.title} at ${DEMO_COMPANY.name}`,
+            `Congratulations ${cand.fullName}! Your official offer letter has been issued and is available in your candidate portal.`,
+          ]
+        );
       }
     }
 

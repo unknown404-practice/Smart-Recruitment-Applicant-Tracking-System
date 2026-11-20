@@ -815,6 +815,23 @@ export async function updateInterview(req: Request, res: Response): Promise<void
       return;
     }
 
+    // Terminal/Status Protection: Prevent modifying CANCELLED or COMPLETED interviews
+    if (existing.status === 'CANCELLED') {
+      res.status(400).json({
+        success: false,
+        error: { message: 'Cannot modify interview: This interview has already been cancelled', statusCode: 400 },
+      });
+      return;
+    }
+
+    if (existing.status === 'COMPLETED') {
+      res.status(400).json({
+        success: false,
+        error: { message: 'Cannot modify interview: This interview has already been marked as completed', statusCode: 400 },
+      });
+      return;
+    }
+
     const body = req.body;
     const requestedStatus = body.status;
     const rawStart = body.scheduledStart || body.scheduled_start;
@@ -1100,6 +1117,15 @@ export async function submitScorecard(req: Request, res: Response): Promise<void
       res.status(403).json({
         success: false,
         error: { message: 'Forbidden: You cannot evaluate an interview for another organization', statusCode: 403 },
+      });
+      return;
+    }
+
+    // Status Protection: Prohibit submitting feedback on CANCELLED interviews
+    if (interview.status === 'CANCELLED') {
+      res.status(400).json({
+        success: false,
+        error: { message: 'Cannot submit feedback: Cannot evaluate a cancelled interview', statusCode: 400 },
       });
       return;
     }

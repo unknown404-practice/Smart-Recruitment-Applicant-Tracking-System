@@ -1094,6 +1094,26 @@ export async function respondToOffer(req: Request, res: Response): Promise<void>
       return;
     }
 
+    if (action === 'ACCEPT' && offerRow.current_stage === 'HIRED') {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(400).json({
+        success: false,
+        error: { message: 'Cannot accept offer: Candidate application has already been marked as hired', statusCode: 400 },
+      });
+      return;
+    }
+
+    if (offerRow.current_stage === 'REJECTED') {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(400).json({
+        success: false,
+        error: { message: 'Cannot respond to offer: Candidate application has been marked as rejected', statusCode: 400 },
+      });
+      return;
+    }
+
     if (offerRow.status === 'DECLINED') {
       await client.query('ROLLBACK');
       inTransaction = false;

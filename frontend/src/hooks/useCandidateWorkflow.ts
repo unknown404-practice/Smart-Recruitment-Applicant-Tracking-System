@@ -129,6 +129,11 @@ export const useCandidateWorkflow = (enabled = true) => {
           )
         );
 
+        // Invalidate and refresh both offers and onboarding tasks cache when offer response completes
+        if (response === 'ACCEPTED') {
+          await fetchWorkflow();
+        }
+
         toast.success(
           response === 'ACCEPTED'
             ? 'Your employment offer has been accepted.'

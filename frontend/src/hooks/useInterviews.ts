@@ -157,7 +157,7 @@ export const useInterviews = () => {
           'Interview Scheduled'
         );
 
-        await fetchInterviews();
+        await Promise.all([fetchInterviews(), fetchInterviewOptions()]);
 
         return createdInterview;
       } catch (err: any) {
@@ -173,7 +173,7 @@ export const useInterviews = () => {
         );
       }
     },
-    [fetchInterviews, toast]
+    [fetchInterviews, fetchInterviewOptions, toast]
   );
 
   const rescheduleInterview = useCallback(
@@ -195,7 +195,7 @@ export const useInterviews = () => {
           'Interview Updated'
         );
 
-        await fetchInterviews();
+        await Promise.all([fetchInterviews(), fetchInterviewOptions()]);
       } catch (err: any) {
         const message =
           err.response?.data?.error?.message ||
@@ -209,7 +209,7 @@ export const useInterviews = () => {
         );
       }
     },
-    [fetchInterviews, toast]
+    [fetchInterviews, fetchInterviewOptions, toast]
   );
 
   const cancelInterview = useCallback(
@@ -225,7 +225,7 @@ export const useInterviews = () => {
           'Interview Cancelled'
         );
 
-        await fetchInterviews();
+        await Promise.all([fetchInterviews(), fetchInterviewOptions()]);
       } catch (err: any) {
         const message =
           err.response?.data?.error?.message ||
@@ -239,7 +239,7 @@ export const useInterviews = () => {
         );
       }
     },
-    [fetchInterviews, toast]
+    [fetchInterviews, fetchInterviewOptions, toast]
   );
 
   const submitScorecard = useCallback(
@@ -265,7 +265,7 @@ export const useInterviews = () => {
           'Scorecard Saved'
         );
 
-        await fetchInterviews();
+        await Promise.all([fetchInterviews(), fetchInterviewOptions()]);
       } catch (err: any) {
         const message =
           err.response?.data?.error?.message ||
@@ -279,7 +279,7 @@ export const useInterviews = () => {
         );
       }
     },
-    [fetchInterviews, toast]
+    [fetchInterviews, fetchInterviewOptions, toast]
   );
 
   return {
