@@ -5,7 +5,6 @@ import {
   Briefcase,
   Users,
   ShieldCheck,
-  Zap,
   ArrowRight,
   CheckCircle2,
   Server,
@@ -13,6 +12,7 @@ import {
   Layers,
   Sparkles,
   Lock,
+  Activity,
 } from 'lucide-react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
@@ -98,10 +98,17 @@ export const HomePage: React.FC = () => {
             </StaggerItem>
 
             <StaggerItem>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50/80 border border-emerald-200/70 text-emerald-800 text-xs font-semibold uppercase tracking-wider shadow-2xs backdrop-blur-xs">
-                <Zap className="w-3.5 h-3.5 text-emerald-600" />
-                Floor 19 Complete — Offer Acceptance & Onboarding System Live
-              </div>
+              <Link to="/admin?tab=activity">
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50/90 border border-emerald-300 text-emerald-800 text-xs font-bold uppercase tracking-wider shadow-2xs backdrop-blur-xs hover:bg-emerald-100 transition cursor-pointer"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Day 20 Live: Real-Time System Activity Feed & Audit Trail
+                  <ArrowRight className="w-3.5 h-3.5 text-emerald-700 ml-1" />
+                </motion.div>
+              </Link>
             </StaggerItem>
 
             <StaggerItem>
@@ -122,6 +129,19 @@ export const HomePage: React.FC = () => {
                   <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                     <Button size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
                       Explore Openings
+                    </Button>
+                  </motion.div>
+                </Link>
+
+                <Link to="/admin?tab=activity">
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      leftIcon={<Activity className="w-4 h-4" />}
+                    >
+                      Live Activity Feed
                     </Button>
                   </motion.div>
                 </Link>
@@ -192,12 +212,12 @@ export const HomePage: React.FC = () => {
                       PostgreSQL Engine
                     </p>
                     <p className="text-sm font-semibold text-slate-800">
-                      12 Migrations Active
+                      15 Migrations Active
                     </p>
                   </div>
                 </div>
                 <span className="text-xs font-mono px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md font-bold border border-emerald-200/60">
-                  <AnimatedNumber value={12} suffix=" SQL" />
+                  <AnimatedNumber value={15} suffix=" SQL" />
                 </span>
               </MotionCard>
             </StaggerItem>

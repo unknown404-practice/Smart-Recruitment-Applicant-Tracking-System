@@ -1,4 +1,6 @@
 ﻿import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -21,12 +23,15 @@ import {
   UserCheck,
   Briefcase,
   Check,
+  History,
+  LayoutGrid,
 } from 'lucide-react';
 import { Button, Badge, Modal, Input, Select } from '../components/ui';
 import { apiClient } from '../services/apiClient';
 import { NotificationDeliveryLog } from '../components/notification';
 import { ActivityTimeline } from '../components/activity';
 import { useActivityFeed } from '../hooks/useActivityFeed';
+import { SPRING_GENTLE } from '../components/animations';
 
 export type UserRole = 'ADMIN' | 'HR' | 'CANDIDATE';
 
@@ -170,6 +175,14 @@ export const AdminPage: React.FC = () => {
     setFilters: setActivityFilters,
     refresh: refreshActivity,
   } = useActivityFeed();
+
+  // Active Admin View Tab (defaults to Floor 20 Activity Feed)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') as 'activity' | 'users' | 'company' | 'notifications' | 'all') || 'activity';
+
+  const setActiveTab = (tab: 'activity' | 'users' | 'company' | 'notifications' | 'all') => {
+    setSearchParams({ tab });
+  };
 
   // Toast System
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
@@ -575,9 +588,139 @@ export const AdminPage: React.FC = () => {
       </div>
 
       {/* ------------------------------------------------------------------- */}
+      {/* Admin Dashboard Tab Navigator                                      */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-2 shadow-xs">
+        <nav className="flex space-x-1 sm:space-x-3 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setActiveTab('activity')}
+            className={`relative px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+              activeTab === 'activity'
+                ? 'bg-brand-50 text-brand-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <History className="w-4 h-4 text-brand-600" />
+            <span>Activity Feed (Floor 20)</span>
+            <span className="px-2 py-0.5 rounded-full text-2xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              Live Feed
+            </span>
+            {activeTab === 'activity' && (
+              <motion.span
+                layoutId="admin-active-tab-pill"
+                className="absolute inset-0 rounded-xl border-2 border-brand-500/20 pointer-events-none"
+                transition={SPRING_GENTLE}
+              />
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`relative px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+              activeTab === 'users'
+                ? 'bg-brand-50 text-brand-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Users className="w-4 h-4 text-purple-600" />
+            <span>User Accounts & RBAC</span>
+            <span className="px-2 py-0.5 rounded-full text-2xs font-semibold bg-slate-100 text-slate-700">
+              {users.length}
+            </span>
+            {activeTab === 'users' && (
+              <motion.span
+                layoutId="admin-active-tab-pill"
+                className="absolute inset-0 rounded-xl border-2 border-brand-500/20 pointer-events-none"
+                transition={SPRING_GENTLE}
+              />
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('company')}
+            className={`relative px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+              activeTab === 'company'
+                ? 'bg-brand-50 text-brand-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Building2 className="w-4 h-4 text-indigo-600" />
+            <span>Company Workspace</span>
+            {activeTab === 'company' && (
+              <motion.span
+                layoutId="admin-active-tab-pill"
+                className="absolute inset-0 rounded-xl border-2 border-brand-500/20 pointer-events-none"
+                transition={SPRING_GENTLE}
+              />
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`relative px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+              activeTab === 'notifications'
+                ? 'bg-brand-50 text-brand-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Mail className="w-4 h-4 text-amber-600" />
+            <span>Notification Telemetry</span>
+            {activeTab === 'notifications' && (
+              <motion.span
+                layoutId="admin-active-tab-pill"
+                className="absolute inset-0 rounded-xl border-2 border-brand-500/20 pointer-events-none"
+                transition={SPRING_GENTLE}
+              />
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`relative px-3.5 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+              activeTab === 'all'
+                ? 'bg-slate-100 text-slate-900 font-bold'
+                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5 text-slate-500" />
+            <span>All Sections</span>
+          </button>
+        </nav>
+      </div>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* SECTION: System-Wide Unified Activity Log (Floor 20 - Highlight)   */}
+      {/* ------------------------------------------------------------------- */}
+      {(activeTab === 'activity' || activeTab === 'all') && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={SPRING_GENTLE}
+        >
+          <ActivityTimeline
+            activities={activities}
+            pagination={activityPagination}
+            loading={activityLoading}
+            error={activityError}
+            filters={activityFilters}
+            onFilterChange={setActivityFilters}
+            onRefresh={refreshActivity}
+            title="Unified System Activity Feed (Floor 20)"
+            subtitle="Real-time multi-tenant audit trail tracking stage machine transitions, interview scheduling, offer issuances, and email dispatches."
+          />
+        </motion.div>
+      )}
+
+      {/* ------------------------------------------------------------------- */}
       {/* SECTION 1: User Management Table                                    */}
       {/* ------------------------------------------------------------------- */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      {(activeTab === 'users' || activeTab === 'all') && (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={SPRING_GENTLE}
+        className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden"
+      >
         {/* Table Header & Search/Filters */}
         <div className="p-5 sm:p-6 border-b border-slate-100 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -764,12 +907,19 @@ export const AdminPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
+      )}
 
       {/* ------------------------------------------------------------------- */}
       {/* SECTION 2: Company Settings Card                                    */}
       {/* ------------------------------------------------------------------- */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 sm:p-8">
+      {(activeTab === 'company' || activeTab === 'all') && (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={SPRING_GENTLE}
+        className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 sm:p-8"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 border border-brand-100">
@@ -958,27 +1108,21 @@ export const AdminPage: React.FC = () => {
             </div>
           </div>
         </form>
-      </div>
+      </motion.div>
+      )}
 
       {/* ------------------------------------------------------------------- */}
       {/* SECTION 3: Notification Delivery Logs & Simulator Telemetry         */}
       {/* ------------------------------------------------------------------- */}
-      <NotificationDeliveryLog />
-
-      {/* ------------------------------------------------------------------- */}
-      {/* SECTION 4: System-Wide Unified Activity Log (Floor 20)              */}
-      {/* ------------------------------------------------------------------- */}
-      <ActivityTimeline
-        activities={activities}
-        pagination={activityPagination}
-        loading={activityLoading}
-        error={activityError}
-        filters={activityFilters}
-        onFilterChange={setActivityFilters}
-        onRefresh={refreshActivity}
-        title="Unified System Activity Feed (Floor 20)"
-        subtitle="Real-time multi-tenant audit trail tracking stage machine transitions, interview scheduling, offer issuances, and email dispatches."
-      />
+      {(activeTab === 'notifications' || activeTab === 'all') && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={SPRING_GENTLE}
+        >
+          <NotificationDeliveryLog />
+        </motion.div>
+      )}
 
       {/* ------------------------------------------------------------------- */}
       {/* MODAL 1: Role Modification Modal (with Instant Feedback)            */}

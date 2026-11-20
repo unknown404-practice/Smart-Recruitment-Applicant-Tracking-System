@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation, Link } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { Logo } from '../ui';
 import {
@@ -9,6 +9,7 @@ import {
   Gift,
   BarChart3,
   ShieldAlert,
+  History,
   X,
 } from 'lucide-react';
 
@@ -17,6 +18,8 @@ export interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
+  const location = useLocation();
+
   const hrMenuItems = [
     { name: 'Job Requisitions', path: ROUTES.HR_JOBS, icon: Briefcase },
     { name: 'Hiring Pipeline', path: ROUTES.HR_PIPELINE, icon: GitBranch },
@@ -26,7 +29,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   ];
 
   const adminMenuItems = [
-    { name: 'Admin & RBAC', path: ROUTES.ADMIN, icon: ShieldAlert },
+    { name: 'System Activity Feed', path: '/admin?tab=activity', icon: History, badge: 'Live Feed' },
+    { name: 'Admin & RBAC', path: '/admin?tab=users', icon: ShieldAlert },
   ];
 
   return (
@@ -93,21 +97,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           <div className="space-y-1">
             {adminMenuItems.map((item) => {
               const Icon = item.icon;
+              const isMatch = item.path.includes('?')
+                ? `${location.pathname}${location.search}` === item.path
+                : location.pathname === item.path && (!location.search || location.search === '?tab=users');
               return (
-                <NavLink
+                <Link
                   key={item.path}
                   to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                      isActive
-                        ? 'bg-brand-50 text-brand-700 font-semibold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                    }`
-                  }
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition ${
+                    isMatch
+                      ? 'bg-brand-50 text-brand-700 font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span>{item.name}</span>
-                </NavLink>
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{item.name}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="text-2xs font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
               );
             })}
           </div>

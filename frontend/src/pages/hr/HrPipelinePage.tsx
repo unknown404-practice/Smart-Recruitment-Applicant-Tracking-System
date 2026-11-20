@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Search,
   Briefcase,
   Loader2,
   RefreshCw,
   Filter,
+  History,
 } from 'lucide-react';
 import {
   ApplicationStage,
@@ -117,6 +119,16 @@ export const HrPipelinePage: React.FC = () => {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
+
+          {/* Activity Feed Shortcut */}
+          <Link
+            to="/admin?tab=activity"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-brand-600 shadow-2xs transition"
+            title="View Real-Time System Activity Feed"
+          >
+            <History className="w-3.5 h-3.5 text-brand-600" />
+            <span className="hidden sm:inline">Activity Feed</span>
+          </Link>
 
           {/* Search Box */}
           <div className="relative">
