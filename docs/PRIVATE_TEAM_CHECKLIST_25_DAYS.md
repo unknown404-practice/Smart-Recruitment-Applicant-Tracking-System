@@ -350,15 +350,15 @@ Establish Schema / API Contract               Build UI & State using Mock Data (
 ---
 
 #### 🔹 Day 20 (Floor 20): System-Wide Unified Activity Log
-* [ ] **Cloud:** `perf(db): optimize activity log view and timeline query indexes`
+* [x] **Cloud:** `perf(db): optimize activity log view and timeline query indexes`
   * Create unified database union view or query aggregating all audit tables with indexes.
-* [ ] **Backend:** `feat(activity-api): implement unified activity history aggregation endpoint`
+* [x] **Backend:** `feat(activity-api): implement unified activity history aggregation endpoint`
   * Implement `GET /api/activity` endpoint with actor, entity, event type, and pagination.
-* [ ] **Frontend 1:** `feat(activity-ui): create visual activity timeline component with event icons`
+* [x] **Frontend 1:** `feat(activity-ui): create visual activity timeline component with event icons`
   * Build visual Activity Timeline UI component with color-coded badges and timestamp formatters.
-* [ ] **Frontend 2:** `feat(activity-ui): embed unified activity timeline in admin and hr views`
+* [x] **Frontend 2:** `feat(activity-ui): embed unified activity timeline in admin and hr views`
   * Embed Activity Timeline into Admin Overview and Candidate Dossier drawer.
-* [ ] **Leader / DevOps:** `test(e2e): automate interview feedback offer and onboarding e2e journey`
+* [x] **Leader / DevOps:** `test(e2e): automate interview feedback offer and onboarding e2e journey`
   * Add Playwright E2E test for complete journey: Schedule interview → Submit feedback → Issue offer → Candidate accepts.
 * **Daily Done Criteria:** Unified activity feed shows end-to-end recruitment audit trail; Playwright journey passes.
 
