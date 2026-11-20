@@ -16,6 +16,7 @@ import applicationRoutes from './routes/applicationRoutes';
 import interviewRoutes from './routes/interviewRoutes';
 import offerRoutes from './routes/offerRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import onboardingRoutes from './routes/onboardingRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app: Application = express();
@@ -136,6 +137,9 @@ app.use('/api/offers', offerRoutes);
 
 // In-App & Email Notification endpoints (Floor 17)
 app.use('/api/notifications', notificationRoutes);
+
+// Candidate Offer Response & Onboarding Task Checklist endpoints (Floor 19)
+app.use('/api/onboarding', onboardingRoutes);
 
 // 404 Not Found Handler
 app.use((req: Request, res: Response) => {

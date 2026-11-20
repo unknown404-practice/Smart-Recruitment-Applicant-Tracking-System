@@ -4,7 +4,8 @@ export type ApplicationStage =
   | 'INTERVIEW'
   | 'SELECTED'
   | 'OFFERED'
-  | 'REJECTED';
+  | 'REJECTED'
+  | 'HIRED';
 
 export const ALL_APPLICATION_STAGES: readonly ApplicationStage[] = [
   'APPLIED',
@@ -13,6 +14,7 @@ export const ALL_APPLICATION_STAGES: readonly ApplicationStage[] = [
   'SELECTED',
   'OFFERED',
   'REJECTED',
+  'HIRED',
 ] as const;
 
 /**
@@ -23,7 +25,8 @@ export const ALL_APPLICATION_STAGES: readonly ApplicationStage[] = [
  * - SCREENING can advance to INTERVIEW or be REJECTED
  * - INTERVIEW can advance to SELECTED or be REJECTED
  * - SELECTED can advance to OFFERED or be REJECTED
- * - OFFERED can be REJECTED (e.g. candidate declined offer or offer revoked)
+ * - OFFERED can advance to HIRED (candidate accepted offer) or be REJECTED (candidate declined or offer revoked)
+ * - HIRED is a terminal state. Once hired, an application cannot transition to any other stage.
  * - REJECTED is a terminal state. Once rejected, an application cannot transition to any other stage.
  * - Stage skipping (e.g. APPLIED -> OFFERED) is strictly prohibited.
  */
@@ -32,7 +35,8 @@ export const ALLOWED_STAGE_TRANSITIONS: Record<ApplicationStage, readonly Applic
   SCREENING: ['INTERVIEW', 'REJECTED'],
   INTERVIEW: ['SELECTED', 'REJECTED'],
   SELECTED: ['OFFERED', 'REJECTED'],
-  OFFERED: ['REJECTED'],
+  OFFERED: ['HIRED', 'REJECTED'],
+  HIRED: [], // Terminal stage: No transitions permitted
   REJECTED: [], // Terminal stage: No transitions permitted
 };
 
@@ -81,10 +85,10 @@ export function validateStageTransition(
     };
   }
 
-  if (fromStage === 'REJECTED') {
+  if (fromStage === 'REJECTED' || fromStage === 'HIRED') {
     return {
       valid: false,
-      error: `Application is in terminal 'REJECTED' stage. Closed applications cannot be transitioned to '${toStage}'.`,
+      error: `Application is in terminal '${fromStage}' stage. Closed applications cannot be transitioned to '${toStage}'.`,
       fromStage,
       toStage,
     };

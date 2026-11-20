@@ -6,7 +6,9 @@ import {
   issueOffer,
   getOfferById,
   listOffers,
+  respondToOffer,
   createOfferSchema,
+  respondOfferSchema,
 } from '../controllers/offerController';
 
 const router = Router();
@@ -58,6 +60,28 @@ router.post(
 router.get(
   '/:id',
   getOfferById
+);
+
+/**
+ * POST /api/offers/:id/respond & PATCH /api/offers/:id/respond
+ * Accepts or declines an issued offer.
+ * When ACCEPTED:
+ * - Updates application current_stage to HIRED and sets hired_at
+ * - Updates offer status to ACCEPTED
+ * - Spawns default onboarding tasks in onboarding_tasks
+ * - Enqueues notification event
+ * Strict candidate ownership check prevents unauthorized candidates from responding.
+ */
+router.post(
+  '/:id/respond',
+  validateRequest({ body: respondOfferSchema }),
+  respondToOffer
+);
+
+router.patch(
+  '/:id/respond',
+  validateRequest({ body: respondOfferSchema }),
+  respondToOffer
 );
 
 export default router;

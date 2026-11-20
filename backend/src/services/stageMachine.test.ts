@@ -30,6 +30,13 @@ describe('Recruitment Pipeline State Machine (stageMachine.ts)', () => {
       const res = validateStageTransition('SELECTED', 'OFFERED', validReason);
       expect(res.valid).toBe(true);
     });
+
+    it('allows OFFERED -> HIRED', () => {
+      const res = validateStageTransition('OFFERED', 'HIRED', validReason);
+      expect(res.valid).toBe(true);
+      expect(res.fromStage).toBe('OFFERED');
+      expect(res.toStage).toBe('HIRED');
+    });
   });
 
   describe('2. Rejection from any non-terminal stage', () => {
@@ -81,12 +88,18 @@ describe('Recruitment Pipeline State Machine (stageMachine.ts)', () => {
     });
   });
 
-  describe('4. Terminal State Protection (REJECTED)', () => {
+  describe('4. Terminal State Protection (REJECTED and HIRED)', () => {
     ALL_APPLICATION_STAGES.forEach((targetStage) => {
       it(`prohibits moving out of REJECTED -> ${targetStage}`, () => {
         const res = validateStageTransition('REJECTED', targetStage, validReason);
         expect(res.valid).toBe(false);
         expect(res.error).toMatch(/terminal 'REJECTED' stage|redundant/i);
+      });
+
+      it(`prohibits moving out of HIRED -> ${targetStage}`, () => {
+        const res = validateStageTransition('HIRED', targetStage, validReason);
+        expect(res.valid).toBe(false);
+        expect(res.error).toMatch(/terminal 'HIRED' stage|redundant/i);
       });
     });
   });

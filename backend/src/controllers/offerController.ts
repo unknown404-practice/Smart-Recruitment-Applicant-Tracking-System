@@ -62,6 +62,22 @@ export const createOfferSchema = z
   );
 
 /**
+ * Zod validation schema for responding to an offer (ACCEPT or DECLINE)
+ */
+export const respondOfferSchema = z.object({
+  action: z
+    .string()
+    .transform((val) => val.trim().toUpperCase())
+    .refine((val) => val === 'ACCEPT' || val === 'DECLINE', {
+      message: 'Action must be either ACCEPT or DECLINE',
+    }),
+  reason: z.string().trim().max(1000).optional(),
+  declined_reason: z.string().trim().max(1000).optional(),
+  declinedReason: z.string().trim().max(1000).optional(),
+  signature: z.string().trim().max(255).optional(),
+});
+
+/**
  * 1. POST /api/offers
  * Creates or saves a draft offer with HTML snapshot and unique active offer constraint enforcement.
  * Role: HR, ADMIN, SUPER_ADMIN
@@ -850,7 +866,7 @@ export async function listOffers(req: Request, res: Response): Promise<void> {
     const params: any[] = [];
 
     if (callerRole === 'CANDIDATE') {
-      sql += ' WHERE u.firebase_uid = $1 ORDER BY o.created_at DESC';
+      sql += " WHERE u.firebase_uid = $1 AND o.status != 'DRAFT' ORDER BY o.created_at DESC";
       params.push(callerUid);
     } else if (callerRole === 'HR') {
       let hrCompanyId = req.user?.companyId;
@@ -884,4 +900,465 @@ export async function listOffers(req: Request, res: Response): Promise<void> {
     });
   }
 }
+
+/**
+ * 5. POST /api/offers/:id/respond
+ * Allows a candidate (or authorized admin) to ACCEPT or DECLINE an issued employment offer.
+ * 
+ * When ACCEPTED:
+ * - Offer status updates to ACCEPTED (accepted_at = NOW(), responded_at = NOW())
+ * - Application stage transitions to HIRED (hired_at = NOW())
+ * - Stage transition history recorded with reason and digital signature
+ * - Automatically spawns default onboarding tasks in onboarding_tasks table
+ * - Enqueues notification event
+ * 
+ * When DECLINED:
+ * - Offer status updates to DECLINED (declined_at = NOW(), responded_at = NOW(), declined_reason = reason)
+ * - Application stage transitions to REJECTED
+ * - Stage history logged
+ * - Enqueues notification event
+ */
+export async function respondToOffer(req: Request, res: Response): Promise<void> {
+  const client = await getClient();
+  let inTransaction = false;
+
+  try {
+    const callerUid = req.user?.uid;
+    const callerRole = (req.user?.role || '').toUpperCase();
+
+    if (!callerUid) {
+      res.status(401).json({
+        success: false,
+        error: { message: 'Authentication required prior to responding to offer', statusCode: 401 },
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    if (!id || !UUID_REGEX.test(id)) {
+      res.status(400).json({
+        success: false,
+        error: { message: 'Invalid offer UUID format', statusCode: 400 },
+      });
+      return;
+    }
+
+    // Validate request body
+    const parseResult = respondOfferSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      const firstError = parseResult.error.errors[0]?.message || 'Invalid offer response request body';
+      res.status(400).json({
+        success: false,
+        error: { message: firstError, statusCode: 400 },
+      });
+      return;
+    }
+
+    const { action, reason, declined_reason, declinedReason, signature } = parseResult.data;
+
+    await client.query('BEGIN');
+    inTransaction = true;
+
+    // Fetch caller user record inside transaction
+    const callerUserRes = await client.query(
+      'SELECT id, full_name, email, role, company_id FROM users WHERE firebase_uid = $1 LIMIT 1;',
+      [callerUid]
+    );
+
+    if (callerUserRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(404).json({
+        success: false,
+        error: { message: 'Authenticated user record not found in database', statusCode: 404 },
+      });
+      return;
+    }
+
+    const callerUser = callerUserRes.rows[0];
+
+    // Fetch and row-lock the offer, application, and candidate profile
+    const lockOfferSql = `
+      SELECT 
+        o.id,
+        o.application_id,
+        o.salary_amount,
+        o.currency,
+        o.start_date,
+        o.offer_letter_html,
+        o.status,
+        o.issued_at,
+        o.responded_at,
+        o.accepted_at,
+        o.declined_at,
+        o.expires_at,
+        o.created_by,
+        o.created_at,
+        o.updated_at,
+        a.current_stage,
+        a.candidate_id,
+        a.job_id,
+        j.title AS job_title,
+        j.company_id AS job_company_id,
+        c.name AS company_name,
+        u.id AS candidate_user_id,
+        u.firebase_uid AS candidate_firebase_uid,
+        u.full_name AS candidate_name,
+        u.email AS candidate_email
+      FROM offer_records o
+      JOIN applications a ON o.application_id = a.id
+      JOIN jobs j ON a.job_id = j.id
+      JOIN companies c ON j.company_id = c.id
+      JOIN candidate_profiles cp ON a.candidate_id = cp.id
+      JOIN users u ON cp.user_id = u.id
+      WHERE o.id = $1
+      FOR UPDATE OF o, a;
+    `;
+
+    const offerResult = await client.query(lockOfferSql, [id]);
+
+    if (offerResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(404).json({
+        success: false,
+        error: { message: 'Offer not found', statusCode: 404 },
+      });
+      return;
+    }
+
+    const offerRow = offerResult.rows[0];
+
+    // Strict row-level candidate ownership check
+    if (callerRole === 'CANDIDATE') {
+      if (offerRow.candidate_firebase_uid !== callerUid) {
+        await client.query('ROLLBACK');
+        inTransaction = false;
+        res.status(403).json({
+          success: false,
+          error: {
+            message: 'Forbidden: You do not have permission to respond to this offer',
+            statusCode: 403,
+          },
+        });
+        return;
+      }
+    } else if (callerRole === 'ADMIN') {
+      const callerCompanyId = req.user?.companyId || callerUser.company_id;
+      if (callerCompanyId && offerRow.job_company_id && callerCompanyId !== offerRow.job_company_id) {
+        await client.query('ROLLBACK');
+        inTransaction = false;
+        res.status(403).json({
+          success: false,
+          error: {
+            message: 'Forbidden: Offer does not belong to your organization',
+            statusCode: 403,
+          },
+        });
+        return;
+      }
+    } else if (callerRole !== 'SUPER_ADMIN') {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(403).json({
+        success: false,
+        error: {
+          message: 'Forbidden: Only the candidate or an authorized administrator may respond to an offer',
+          statusCode: 403,
+        },
+      });
+      return;
+    }
+
+    // Offer Status Integrity Checks
+    if (offerRow.status === 'ACCEPTED') {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(400).json({
+        success: false,
+        error: { message: 'Offer has already been accepted', statusCode: 400 },
+      });
+      return;
+    }
+
+    if (offerRow.status === 'DECLINED') {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(400).json({
+        success: false,
+        error: { message: 'Offer has already been declined', statusCode: 400 },
+      });
+      return;
+    }
+
+    if (offerRow.status === 'EXPIRED') {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(400).json({
+        success: false,
+        error: { message: 'Offer has expired and can no longer be accepted or declined', statusCode: 400 },
+      });
+      return;
+    }
+
+    if (offerRow.status === 'DRAFT') {
+      await client.query('ROLLBACK');
+      inTransaction = false;
+      res.status(400).json({
+        success: false,
+        error: {
+          message: 'Cannot respond to a draft offer that has not been officially issued',
+          statusCode: 400,
+        },
+      });
+      return;
+    }
+
+    // Check expiration timeline
+    if (offerRow.expires_at && new Date(offerRow.expires_at).getTime() < Date.now()) {
+      await client.query(
+        `UPDATE offer_records SET status = 'EXPIRED', expired_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1;`,
+        [id]
+      );
+      await client.query('COMMIT');
+      inTransaction = false;
+      res.status(400).json({
+        success: false,
+        error: { message: 'Offer has expired and can no longer be accepted or declined', statusCode: 400 },
+      });
+      return;
+    }
+
+    if (action === 'ACCEPT') {
+      // 1. Update offer status to ACCEPTED
+      const updateOfferSql = `
+        UPDATE offer_records
+        SET status = 'ACCEPTED',
+            accepted_at = CURRENT_TIMESTAMP,
+            responded_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING *;
+      `;
+      const updatedOfferRes = await client.query(updateOfferSql, [id]);
+      const updatedOffer = updatedOfferRes.rows[0];
+
+      // 2. Atomically update application stage to HIRED and set hired_at
+      const updateAppSql = `
+        UPDATE applications
+        SET current_stage = 'HIRED',
+            hired_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING *;
+      `;
+      const updatedAppRes = await client.query(updateAppSql, [offerRow.application_id]);
+      const updatedApp = updatedAppRes.rows[0];
+
+      // 3. Record stage transition in immutable history
+      const auditReason = signature
+        ? `Candidate accepted formal employment offer (Signed digitally: ${signature})`
+        : 'Candidate accepted formal employment offer';
+
+      await client.query(
+        `INSERT INTO application_stage_history (application_id, from_stage, to_stage, changed_by, reason)
+         VALUES ($1, $2, 'HIRED', $3, $4);`,
+        [offerRow.application_id, offerRow.current_stage || 'OFFERED', callerUser.id, auditReason]
+      );
+
+      // 4. Auto-spawn default onboarding tasks
+      const defaultTasksSql = `
+        INSERT INTO onboarding_tasks (
+          candidate_id,
+          offer_id,
+          application_id,
+          title,
+          description,
+          category,
+          due_date,
+          is_completed
+        ) VALUES 
+          ($1, $2, $3, 'Submit Government ID & Verification', 'Upload valid government-issued photo ID and proof of citizenship or work eligibility.', 'COMPLIANCE', CURRENT_DATE + 7, false),
+          ($1, $2, $3, 'Complete Direct Deposit Form', 'Provide banking details and direct deposit authorization for payroll processing.', 'FINANCE', CURRENT_DATE + 7, false),
+          ($1, $2, $3, 'Select Workstation Hardware & Peripherals', 'Choose your preferred laptop setup and accessories for your home office.', 'EQUIPMENT', CURRENT_DATE + 10, false),
+          ($1, $2, $3, 'Sign Intellectual Property & Security Agreement', 'Review and sign the employee confidentiality, data protection, and IP assignment policy.', 'LEGAL', CURRENT_DATE + 5, false)
+        RETURNING 
+          id,
+          candidate_id,
+          offer_id,
+          application_id,
+          title,
+          description,
+          category,
+          is_completed,
+          due_date,
+          completed_at,
+          created_at,
+          updated_at;
+      `;
+
+      const tasksRes = await client.query(defaultTasksSql, [
+        offerRow.candidate_id,
+        id,
+        offerRow.application_id,
+      ]);
+
+      // 5. Enqueue in-app and email notification event for HR and Candidate
+      const notificationSubject = `Offer Accepted: ${offerRow.candidate_name} has joined ${offerRow.company_name}!`;
+      const notificationBody = `Great news! ${offerRow.candidate_name} has accepted the employment offer for ${offerRow.job_title}. Onboarding checklist tasks have been generated.`;
+
+      await client.query(
+        `INSERT INTO notification_events (recipient_user_id, channel, event_type, subject, content_body, status)
+         VALUES ($1, 'EMAIL', 'OFFER_ACCEPTED', $2, $3, 'PENDING');`,
+        [offerRow.candidate_user_id, notificationSubject, notificationBody]
+      );
+
+      await client.query('COMMIT');
+      inTransaction = false;
+
+      const formattedTasks = tasksRes.rows.map((t) => ({
+        id: t.id,
+        candidateId: t.candidate_id,
+        candidate_id: t.candidate_id,
+        offerId: t.offer_id,
+        offer_id: t.offer_id,
+        applicationId: t.application_id,
+        application_id: t.application_id,
+        title: t.title,
+        description: t.description,
+        category: t.category,
+        isCompleted: t.is_completed,
+        is_completed: t.is_completed,
+        dueDate: t.due_date,
+        due_date: t.due_date,
+        completedAt: t.completed_at,
+        completed_at: t.completed_at,
+        createdAt: t.created_at,
+        created_at: t.created_at,
+        updatedAt: t.updated_at,
+        updated_at: t.updated_at,
+      }));
+
+      res.status(200).json({
+        success: true,
+        message: 'Employment offer accepted successfully. Welcome to the team!',
+        data: {
+          offer: {
+            id: updatedOffer.id,
+            applicationId: updatedOffer.application_id,
+            application_id: updatedOffer.application_id,
+            status: updatedOffer.status,
+            acceptedAt: updatedOffer.accepted_at,
+            accepted_at: updatedOffer.accepted_at,
+            respondedAt: updatedOffer.responded_at,
+            responded_at: updatedOffer.responded_at,
+          },
+          application: {
+            id: updatedApp.id,
+            currentStage: updatedApp.current_stage,
+            current_stage: updatedApp.current_stage,
+            hiredAt: updatedApp.hired_at,
+            hired_at: updatedApp.hired_at,
+          },
+          onboardingTasks: formattedTasks,
+        },
+      });
+      return;
+    } else {
+      // Action === 'DECLINE'
+      const finalDeclineReason =
+        reason || declined_reason || declinedReason || 'Candidate declined employment offer';
+
+      // 1. Update offer status to DECLINED
+      const updateOfferSql = `
+        UPDATE offer_records
+        SET status = 'DECLINED',
+            declined_at = CURRENT_TIMESTAMP,
+            responded_at = CURRENT_TIMESTAMP,
+            declined_reason = $2,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING *;
+      `;
+      const updatedOfferRes = await client.query(updateOfferSql, [id, finalDeclineReason]);
+      const updatedOffer = updatedOfferRes.rows[0];
+
+      // 2. Transition application stage to REJECTED
+      const updateAppSql = `
+        UPDATE applications
+        SET current_stage = 'REJECTED',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING *;
+      `;
+      const updatedAppRes = await client.query(updateAppSql, [offerRow.application_id]);
+      const updatedApp = updatedAppRes.rows[0];
+
+      // 3. Record stage history
+      await client.query(
+        `INSERT INTO application_stage_history (application_id, from_stage, to_stage, changed_by, reason)
+         VALUES ($1, $2, 'REJECTED', $3, $4);`,
+        [
+          offerRow.application_id,
+          offerRow.current_stage || 'OFFERED',
+          callerUser.id,
+          `Candidate declined offer: ${finalDeclineReason}`,
+        ]
+      );
+
+      // 4. Enqueue notification event
+      const notificationSubject = `Offer Declined: ${offerRow.candidate_name} (${offerRow.job_title})`;
+      const notificationBody = `${offerRow.candidate_name} has declined the offer for ${offerRow.job_title}. Reason: ${finalDeclineReason}`;
+
+      await client.query(
+        `INSERT INTO notification_events (recipient_user_id, channel, event_type, subject, content_body, status)
+         VALUES ($1, 'EMAIL', 'OFFER_DECLINED', $2, $3, 'PENDING');`,
+        [offerRow.candidate_user_id, notificationSubject, notificationBody]
+      );
+
+      await client.query('COMMIT');
+      inTransaction = false;
+
+      res.status(200).json({
+        success: true,
+        message: 'Employment offer declined successfully',
+        data: {
+          offer: {
+            id: updatedOffer.id,
+            applicationId: updatedOffer.application_id,
+            application_id: updatedOffer.application_id,
+            status: updatedOffer.status,
+            declinedAt: updatedOffer.declined_at,
+            declined_at: updatedOffer.declined_at,
+            respondedAt: updatedOffer.responded_at,
+            responded_at: updatedOffer.responded_at,
+            declinedReason: updatedOffer.declined_reason,
+            declined_reason: updatedOffer.declined_reason,
+          },
+          application: {
+            id: updatedApp.id,
+            currentStage: updatedApp.current_stage,
+            current_stage: updatedApp.current_stage,
+          },
+        },
+      });
+      return;
+    }
+  } catch (error: any) {
+    if (inTransaction) {
+      await client.query('ROLLBACK');
+    }
+    console.error('[OfferController] Error responding to offer:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: {
+        message: error.message || 'Internal server error while responding to offer',
+        statusCode: error.statusCode || 500,
+      },
+    });
+  } finally {
+    client.release();
+  }
+}
+
 

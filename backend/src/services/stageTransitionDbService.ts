@@ -72,7 +72,9 @@ export const LOCK_APPLICATION_FOR_UPDATE_SQL = `
 
 export const UPDATE_APPLICATION_STAGE_SQL = `
   UPDATE applications
-  SET current_stage = $1, updated_at = CURRENT_TIMESTAMP
+  SET current_stage = $1,
+      hired_at = CASE WHEN $1 = 'HIRED' THEN CURRENT_TIMESTAMP ELSE hired_at END,
+      updated_at = CURRENT_TIMESTAMP
   WHERE id = $2
   RETURNING id, job_id, candidate_id, current_stage, updated_at;
 `;
