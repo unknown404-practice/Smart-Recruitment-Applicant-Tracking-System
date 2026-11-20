@@ -288,7 +288,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
 
                 return (
                   <motion.div
-                    key={item.id}
+                    key={`${item.activity_type}-${item.id}`}
                     layout
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}

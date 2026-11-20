@@ -53,8 +53,11 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
       return;
     }
 
-    // Role-based access control
-    if (callerRole !== 'ADMIN' && callerRole !== 'HR') {
+    // Role-based access control (SEC-06)
+    const isGlobalAdmin = callerRole === 'ADMIN' || callerRole === 'SUPER_ADMIN';
+    const isCompanyStaff = callerRole === 'HR' || callerRole === 'HR_MANAGER' || callerRole === 'RECRUITER';
+
+    if (!isGlobalAdmin && !isCompanyStaff) {
       res.status(403).json({
         success: false,
         error: { message: 'Forbidden: Insufficient privileges to view system activity log', statusCode: 403 },
@@ -79,9 +82,25 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
     const { page, limit, activityType, companyId, candidateId, applicationId, search, startDate, endDate } =
       parseResult.data;
 
+    // Validate date sequence if both provided
+    if (startDate && endDate) {
+      const s = new Date(startDate);
+      const e = new Date(endDate);
+      if (!isNaN(s.getTime()) && !isNaN(e.getTime()) && s.getTime() > e.getTime()) {
+        res.status(400).json({
+          success: false,
+          error: {
+            message: 'Invalid activity query parameters: startDate cannot be after endDate',
+            statusCode: 400,
+          },
+        });
+        return;
+      }
+    }
+
     // Multi-tenant boundary enforcement
     let effectiveCompanyId: string | null = null;
-    if (callerRole === 'HR') {
+    if (isCompanyStaff) {
       if (!callerCompanyId) {
         res.status(403).json({
           success: false,
@@ -103,7 +122,7 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
         return;
       }
       effectiveCompanyId = callerCompanyId;
-    } else if (callerRole === 'ADMIN') {
+    } else if (isGlobalAdmin) {
       effectiveCompanyId = companyId || callerCompanyId || null;
     }
 
@@ -144,7 +163,11 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
 
     if (endDate) {
       conditions.push(`created_at <= $${paramIndex}`);
-      values.push(endDate);
+      // If YYYY-MM-DD was provided, include the complete end date day
+      const normalizedEndDate = /^\d{4}-\d{2}-\d{2}$/.test(endDate)
+        ? `${endDate}T23:59:59.999Z`
+        : endDate;
+      values.push(normalizedEndDate);
       paramIndex++;
     }
 

@@ -130,10 +130,10 @@ SELECT
     'OFFER'::VARCHAR(50) AS entity_type,
     o.id AS entity_id,
     j.company_id AS company_id,
-    o.created_by AS actor_id,
-    COALESCE(u_actor.full_name, 'HR Manager') AS actor_name,
-    COALESCE(u_actor.email, 'hr@smartats.com') AS actor_email,
-    COALESCE(u_actor.role::VARCHAR, 'HR') AS actor_role,
+    CASE WHEN o.status IN ('ACCEPTED', 'DECLINED') THEN u_cand.id ELSE o.created_by END AS actor_id,
+    CASE WHEN o.status IN ('ACCEPTED', 'DECLINED') THEN COALESCE(u_cand.full_name, 'Candidate') ELSE COALESCE(u_actor.full_name, 'HR Manager') END AS actor_name,
+    CASE WHEN o.status IN ('ACCEPTED', 'DECLINED') THEN u_cand.email ELSE COALESCE(u_actor.email, 'hr@smartats.com') END AS actor_email,
+    CASE WHEN o.status IN ('ACCEPTED', 'DECLINED') THEN 'CANDIDATE' ELSE COALESCE(u_actor.role::VARCHAR, 'HR') END AS actor_role,
     cp.id AS candidate_id,
     COALESCE(u_cand.full_name, 'Candidate') AS candidate_name,
     u_cand.email AS candidate_email,
@@ -174,7 +174,10 @@ SELECT
     'NOTIFICATION_DISPATCH'::VARCHAR(50) AS activity_type,
     'NOTIFICATION'::VARCHAR(50) AS entity_type,
     ne.id AS entity_id,
-    u_recip.company_id AS company_id,
+    COALESCE(
+        u_recip.company_id,
+        (SELECT j_cand.company_id FROM applications a_cand JOIN jobs j_cand ON a_cand.job_id = j_cand.id WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.created_at DESC LIMIT 1)
+    ) AS company_id,
     NULL::UUID AS actor_id,
     'System Dispatcher' AS actor_name,
     'system@smartats.com' AS actor_email,
@@ -182,9 +185,9 @@ SELECT
     cp.id AS candidate_id,
     u_recip.full_name AS candidate_name,
     u_recip.email AS candidate_email,
-    NULL::UUID AS job_id,
-    NULL::VARCHAR(255) AS job_title,
-    NULL::UUID AS application_id,
+    (SELECT a_cand.job_id FROM applications a_cand WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.created_at DESC LIMIT 1) AS job_id,
+    (SELECT j_cand.title FROM applications a_cand JOIN jobs j_cand ON a_cand.job_id = j_cand.id WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.created_at DESC LIMIT 1) AS job_title,
+    (SELECT a_cand.id FROM applications a_cand WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.created_at DESC LIMIT 1) AS application_id,
     ne.event_type AS action,
     ne.subject AS title,
     'Notification delivered via ' || ne.channel::VARCHAR || ' (' || ne.status::VARCHAR || ')' AS description,
@@ -233,7 +236,8 @@ SELECT
 FROM onboarding_tasks ot
 JOIN candidate_profiles cp ON ot.candidate_id = cp.id
 JOIN users u_cand ON cp.user_id = u_cand.id
-LEFT JOIN applications a ON ot.application_id = a.id
+LEFT JOIN offer_records o ON ot.offer_id = o.id
+LEFT JOIN applications a ON COALESCE(ot.application_id, o.application_id) = a.id
 LEFT JOIN jobs j ON a.job_id = j.id;
 
 -- ----------------------------------------------------------------------------

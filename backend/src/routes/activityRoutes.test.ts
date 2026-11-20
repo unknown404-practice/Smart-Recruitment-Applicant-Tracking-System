@@ -54,10 +54,26 @@ describe('Unified System Activity Log API (/api/activity) (Floor 20)', () => {
     isActive: true,
   };
 
+  const superAdminToken = {
+    uid: 'superadmin-uid-001',
+    email: 'superadmin@techcorp.com',
+    role: 'SUPER_ADMIN',
+    companyId: null,
+    isActive: true,
+  };
+
   const hrTokenCompanyA = {
     uid: 'hr-uid-001',
     email: 'hr@techcorp.com',
     role: 'HR',
+    companyId: companyAId,
+    isActive: true,
+  };
+
+  const recruiterToken = {
+    uid: 'recruiter-uid-001',
+    email: 'recruiter@techcorp.com',
+    role: 'RECRUITER',
     companyId: companyAId,
     isActive: true,
   };
@@ -264,6 +280,39 @@ describe('Unified System Activity Log API (/api/activity) (Floor 20)', () => {
       expect(countArgs[0]).toContain('activity_type = $2');
       expect(countArgs[1]).toContain('STAGE_TRANSITION');
     });
+
+    it('allows RECRUITER role to query activity feed scoped to their company', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(recruiterToken);
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ total: 1 }] })
+        .mockResolvedValueOnce({ rows: [sampleActivities[0]] });
+
+      const res = await request(app)
+        .get('/api/activity')
+        .set('Authorization', 'Bearer recruiter-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      const countArgs = mockQuery.mock.calls[0];
+      expect(countArgs[0]).toContain('company_id = $1');
+      expect(countArgs[1]).toContain(companyAId);
+    });
+
+    it('allows SUPER_ADMIN role to query activity feed without company restriction', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(superAdminToken);
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ total: 2 }] })
+        .mockResolvedValueOnce({ rows: sampleActivities });
+
+      const res = await request(app)
+        .get('/api/activity')
+        .set('Authorization', 'Bearer super-admin-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      const countArgs = mockQuery.mock.calls[0];
+      expect(countArgs[0]).not.toContain('company_id =');
+    });
   });
 
   describe('3. Query Validation & Defensive Input Hardening', () => {
@@ -277,6 +326,36 @@ describe('Unified System Activity Log API (/api/activity) (Floor 20)', () => {
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.error.message).toMatch(/Invalid activity query parameters/i);
+    });
+
+    it('rejects request when startDate is after endDate with 400 Bad Request', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(adminToken);
+
+      const res = await request(app)
+        .get('/api/activity?startDate=2026-11-25&endDate=2026-11-20')
+        .set('Authorization', 'Bearer admin-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toMatch(/startDate cannot be after endDate/i);
+    });
+
+    it('normalizes YYYY-MM-DD endDate to end-of-day timestamp', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(adminToken);
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ total: 1 }] })
+        .mockResolvedValueOnce({ rows: [sampleActivities[0]] });
+
+      const res = await request(app)
+        .get('/api/activity?endDate=2026-11-20')
+        .set('Authorization', 'Bearer admin-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      const countArgs = mockQuery.mock.calls[0];
+      expect(countArgs[0]).toContain('created_at <= $2');
+      expect(countArgs[1]).toContain('2026-11-20T23:59:59.999Z');
     });
 
     it('rejects invalid non-UUID applicationId with 400 Bad Request', async () => {
@@ -361,7 +440,18 @@ describe('Unified System Activity Log API (/api/activity) (Floor 20)', () => {
   });
 
   describe('4. Activity Taxonomy Endpoint (/api/activity/types)', () => {
-    it('returns the list of supported activity types', async () => {
+    it('rejects CANDIDATE role with 403 Forbidden', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(candidateToken);
+
+      const res = await request(app)
+        .get('/api/activity/types')
+        .set('Authorization', 'Bearer candidate-token');
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Forbidden');
+    });
+
+    it('returns the list of supported activity types for authorized staff', async () => {
       mockVerifyFirebaseIdToken.mockResolvedValue(adminToken);
 
       const res = await request(app)
