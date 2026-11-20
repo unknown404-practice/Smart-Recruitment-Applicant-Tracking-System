@@ -176,7 +176,7 @@ SELECT
     ne.id AS entity_id,
     COALESCE(
         u_recip.company_id,
-        (SELECT j_cand.company_id FROM applications a_cand JOIN jobs j_cand ON a_cand.job_id = j_cand.id WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.created_at DESC LIMIT 1)
+        (SELECT j_cand.company_id FROM applications a_cand JOIN jobs j_cand ON a_cand.job_id = j_cand.id WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.applied_at DESC LIMIT 1)
     ) AS company_id,
     NULL::UUID AS actor_id,
     'System Dispatcher' AS actor_name,
@@ -185,9 +185,9 @@ SELECT
     cp.id AS candidate_id,
     u_recip.full_name AS candidate_name,
     u_recip.email AS candidate_email,
-    (SELECT a_cand.job_id FROM applications a_cand WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.created_at DESC LIMIT 1) AS job_id,
-    (SELECT j_cand.title FROM applications a_cand JOIN jobs j_cand ON a_cand.job_id = j_cand.id WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.created_at DESC LIMIT 1) AS job_title,
-    (SELECT a_cand.id FROM applications a_cand WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.created_at DESC LIMIT 1) AS application_id,
+    (SELECT a_cand.job_id FROM applications a_cand WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.applied_at DESC LIMIT 1) AS job_id,
+    (SELECT j_cand.title FROM applications a_cand JOIN jobs j_cand ON a_cand.job_id = j_cand.id WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.applied_at DESC LIMIT 1) AS job_title,
+    (SELECT a_cand.id FROM applications a_cand WHERE a_cand.candidate_id = cp.id ORDER BY a_cand.applied_at DESC LIMIT 1) AS application_id,
     ne.event_type AS action,
     ne.subject AS title,
     'Notification delivered via ' || ne.channel::VARCHAR || ' (' || ne.status::VARCHAR || ')' AS description,
