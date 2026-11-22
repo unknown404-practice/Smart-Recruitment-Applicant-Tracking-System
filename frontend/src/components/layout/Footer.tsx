@@ -2,79 +2,89 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { Logo } from '../ui';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-white border-t border-slate-200 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="bg-slate-900 text-slate-400 border-t border-slate-800 mt-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           {/* Brand info */}
-          <div className="space-y-3 md:col-span-2">
+          <div className="space-y-4 md:col-span-2">
             <div className="flex items-center gap-2">
-              <Logo variant="horizontal" size="sm" showBadge={true} badgeText="Recruitment ATS" />
+              <Logo variant="horizontal" size="sm" />
             </div>
-            <p className="text-sm text-slate-500 max-w-md">
-              Enterprise-grade recruitment platform built with Express, PostgreSQL, Firebase Auth, and React Vite. 25-day rapid development architecture.
+            <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
+              Enterprise-grade applicant tracking system designed for collaborative hiring teams, automated pipelines, and seamless candidate journeys.
             </p>
+            <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium pt-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>All Systems Operational</span>
+            </div>
           </div>
 
-          {/* Candidate Links */}
+          {/* Platform Navigation (Universal Access Only) */}
           <div>
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-              Candidate Zone
+            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-3">
+              Platform
             </h3>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2.5 text-sm">
               <li>
-                <Link to={ROUTES.JOBS} className="text-slate-600 hover:text-brand-600 transition">
-                  Browse Openings
+                <Link to={ROUTES.JOBS} className="text-slate-400 hover:text-white transition">
+                  Browse Open Positions
                 </Link>
               </li>
               <li>
-                <Link to={ROUTES.CANDIDATE} className="text-slate-600 hover:text-brand-600 transition">
-                  Candidate Dashboard
+                <Link to={ROUTES.HOME} className="text-slate-400 hover:text-white transition">
+                  Platform Overview
                 </Link>
               </li>
               <li>
-                <Link to={ROUTES.LOGIN} className="text-slate-600 hover:text-brand-600 transition">
-                  Applicant Sign In
+                <Link to={ROUTES.LOGIN} className="text-slate-400 hover:text-white transition">
+                  Account Sign In
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Enterprise & HR */}
+          {/* Trust & Security */}
           <div>
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-              Enterprise & HR
+            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-3">
+              Trust & Compliance
             </h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to={ROUTES.HR_PIPELINE} className="text-slate-600 hover:text-brand-600 transition">
-                  Candidate Pipeline
-                </Link>
+            <ul className="space-y-2.5 text-sm">
+              <li className="flex items-center gap-1.5 text-slate-400">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Multi-Tenant Data Isolation</span>
               </li>
-              <li>
-                <Link to={ROUTES.HR_JOBS} className="text-slate-600 hover:text-brand-600 transition">
-                  Post Requisition
-                </Link>
+              <li className="flex items-center gap-1.5 text-slate-400">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Immutable Stage Audit Logs</span>
               </li>
-              <li>
-                <Link to={ROUTES.ADMIN} className="text-slate-600 hover:text-brand-600 transition">
-                  Security & Admin
-                </Link>
+              <li className="flex items-center gap-1.5 text-slate-400">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Cryptographic Offer Hashes</span>
+              </li>
+              <li className="flex items-center gap-1.5 text-slate-400">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Role-Based Access Control</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-slate-100 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} Smart Employee. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-emerald-600 font-medium">
-              <ShieldCheck className="w-3.5 h-3.5" /> Firebase Auth Emulator Verified
+        {/* Bottom Bar */}
+        <div className="border-t border-slate-800/80 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+          <p>© {new Date().getFullYear()} Smart Employee Inc. All rights reserved.</p>
+          <div className="flex items-center gap-4 text-xs">
+            <span className="flex items-center gap-1.5 text-slate-300">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>Enterprise Grade Security</span>
             </span>
-            <span>REST API :5000</span>
+            <span className="text-slate-600">•</span>
+            <span>GDPR Ready</span>
+            <span className="text-slate-600">•</span>
+            <span>AES-256 Protected</span>
           </div>
         </div>
       </div>
