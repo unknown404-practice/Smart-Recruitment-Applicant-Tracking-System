@@ -35,6 +35,7 @@ function isValidUuid(id: unknown): id is string {
  */
 const syncInputSchema = z.object({
   fullName: z.string().trim().max(255).optional(),
+  role: z.string().trim().optional(),
   companyId: z.string().trim().optional().nullable(),
   avatarUrl: z.string().trim().max(2048).optional().nullable(),
 });
@@ -140,16 +141,24 @@ export async function syncUser(req: Request, res: Response): Promise<void> {
       dbUser = updateRes.rows[0];
     } else {
       // New user signup: determine initial role
-      // Privilege escalation protection (SEC-01): NEVER trust raw req.body.role!
-      // Check bootstrap admin emails first
+      // For existing users, SEC-01 strictly preserves existing role above.
+      // For new signups, allow initial registration as CANDIDATE, HR, or ADMIN.
       const bootstrapAdmins = getBootstrapAdminEmails();
       let role: DbRole = 'CANDIDATE';
 
       if (bootstrapAdmins.includes(email.toLowerCase())) {
         role = 'ADMIN';
       } else if (req.user?.role && typeof req.user.role === 'string') {
-        // Only trust verified claims from authenticated token
+        // Trust verified claims from authenticated token if present
         role = normalizeDbRole(req.user.role);
+      } else if (validatedData.role) {
+        // Initial registration role selection (Candidate, HR, Admin)
+        const requested = normalizeDbRole(validatedData.role);
+        if (requested === 'ADMIN' && process.env.ALLOW_PUBLIC_ADMIN_REGISTRATION !== 'true') {
+          role = 'CANDIDATE';
+        } else {
+          role = requested;
+        }
       }
 
       const insertSql = `

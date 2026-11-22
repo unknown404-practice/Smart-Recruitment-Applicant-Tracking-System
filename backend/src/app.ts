@@ -20,6 +20,7 @@ import onboardingRoutes from './routes/onboardingRoutes';
 import activityRoutes from './routes/activityRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import { generalRateLimiter, authRateLimiter, submissionRateLimiter } from './middleware/rateLimiter';
 
 const app: Application = express();
 
@@ -114,6 +115,12 @@ app.get('/api/health', async (_req: Request, res: Response) => {
     });
   }
 });
+
+// Rate Limiting Middlewares (SaaS Reliability & Brute-Force Defense)
+app.use('/api', generalRateLimiter);
+app.use('/api/auth', authRateLimiter);
+app.use('/api/applications', submissionRateLimiter);
+app.use('/api/resumes', submissionRateLimiter);
 
 // Authentication and RBAC endpoints
 app.use('/api/auth', authRoutes);
