@@ -16,7 +16,7 @@ describe('Database Migration 014: Hiring Analytics Functions & Zero-Division Gua
     expect(content).toContain('CREATE INDEX IF NOT EXISTS idx_apps_analytics_cohort');
     expect(content).toContain('CREATE INDEX IF NOT EXISTS idx_jobs_company_dept');
     expect(content).toContain('CREATE INDEX IF NOT EXISTS idx_stage_history_analytics');
-    expect(content).toContain('CREATE INDEX IF NOT EXISTS idx_offers_company_status_analytics');
+    expect(content).toContain('CREATE INDEX IF NOT EXISTS idx_offers_status_analytics');
   });
 
   it('3. Defines PostgreSQL helper function fn_get_hiring_analytics_summary', () => {

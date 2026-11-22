@@ -148,7 +148,7 @@ export class AnalyticsService {
 
     // 2. Offer Acceptance query
     const offerParams: any[] = [companyId];
-    let offerWhere = 'WHERE o.company_id = $1';
+    let offerWhere = 'WHERE j.company_id = $1';
     if (jobId) {
       offerParams.push(jobId);
       offerWhere += ` AND j.id = $${offerParams.length}`;

@@ -13,8 +13,8 @@ ON jobs (company_id, department, status);
 CREATE INDEX IF NOT EXISTS idx_stage_history_analytics
 ON application_stage_history (application_id, to_stage, changed_at);
 
-CREATE INDEX IF NOT EXISTS idx_offers_company_status_analytics
-ON offer_records (company_id, status, issued_at, responded_at);
+CREATE INDEX IF NOT EXISTS idx_offers_status_analytics
+ON offer_records (application_id, status, issued_at, responded_at);
 
 -- 2. PostgreSQL Helper Function: Get Hiring KPI & Funnel Summary
 -- Strictly scoped to corporate tenant p_company_id with UTC date truncation and NULLIF guards
@@ -100,7 +100,7 @@ BEGIN
     FROM offer_records o
     JOIN applications a ON o.application_id = a.id
     JOIN jobs j ON a.job_id = j.id
-    WHERE o.company_id = p_company_id
+    WHERE j.company_id = p_company_id
       AND (p_job_id IS NULL OR j.id = p_job_id)
       AND (p_department IS NULL OR j.department = p_department)
       AND (p_start_date IS NULL OR o.created_at >= (p_start_date AT TIME ZONE 'UTC'))
