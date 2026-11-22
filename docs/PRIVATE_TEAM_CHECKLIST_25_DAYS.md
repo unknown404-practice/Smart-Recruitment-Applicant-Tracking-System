@@ -383,15 +383,15 @@ Establish Schema / API Contract               Build UI & State using Mock Data (
 **Milestone Release:** `v1.0.0`
 
 #### 🔹 Day 22 (Floor 22): Hiring Analytics Engine & Funnel Metrics
-* [ ] **Cloud:** `perf(analytics): add utc date boundary normalization and nullif sql guards`
+* [x] **Cloud:** `perf(analytics): add utc date boundary normalization and nullif sql guards`
   * Add UTC date truncation and `NULLIF(denominator, 0)` guards to prevent division-by-zero errors.
-* [ ] **Backend:** `feat(analytics-api): implement sql hiring kpi aggregation with filters`
+* [x] **Backend:** `feat(analytics-api): implement sql hiring kpi aggregation with filters`
   * Implement `GET /api/analytics/summary` computing Volume, Stage Conversion, Time-to-Hire, and Offer Acceptance.
-* [ ] **Frontend 1:** `feat(analytics-ui): build hiring analytics dashboard charts and layout`
+* [x] **Frontend 1:** `feat(analytics-ui): build hiring analytics dashboard charts and layout`
   * Build Page 7: Hiring Analytics (`/hr/analytics`) UI with KPI summary cards and funnel visualization bars.
-* [ ] **Frontend 2:** `feat(analytics-ui): wire analytics filter controls and formula explanation tooltips`
+* [x] **Frontend 2:** `feat(analytics-ui): wire analytics filter controls and formula explanation tooltips`
   * Wire Job/Date/Department filters and add formula explanation tooltips on each metric card.
-* [ ] **Leader / DevOps:** `test(analytics): verify kpi denominator accuracy and empty dataset handling`
+* [x] **Leader / DevOps:** `test(analytics): verify kpi denominator accuracy and empty dataset handling`
   * Write analytical tests verifying metrics with empty date ranges and incomplete datasets.
 * **Daily Done Criteria:** Analytics dashboard renders accurate calculations without division-by-zero errors.
 
