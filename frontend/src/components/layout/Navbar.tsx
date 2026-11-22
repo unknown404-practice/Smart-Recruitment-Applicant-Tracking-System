@@ -53,12 +53,16 @@ export const Navbar: React.FC<NavbarProps> = ({
     return location.pathname.startsWith(path);
   };
 
+  const role = (currentUser?.role || '').toUpperCase();
+  const isHR = ['HR', 'HR_MANAGER', 'RECRUITER', 'ADMIN', 'SUPER_ADMIN'].includes(role);
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(role);
+
   const navLinks = [
     { name: 'Home', path: ROUTES.HOME },
     { name: 'Browse Jobs', path: ROUTES.JOBS, icon: Briefcase },
-    { name: 'Candidate Portal', path: ROUTES.CANDIDATE, icon: UserCheck },
-    { name: 'HR Workspace', path: ROUTES.HR_PIPELINE, icon: Building2 },
-    { name: 'Admin', path: ROUTES.ADMIN, icon: ShieldCheck },
+    ...(currentUser ? [{ name: 'Candidate Portal', path: ROUTES.CANDIDATE, icon: UserCheck }] : []),
+    ...(isHR ? [{ name: 'HR Workspace', path: ROUTES.HR_PIPELINE, icon: Building2 }] : []),
+    ...(isAdmin ? [{ name: 'Admin', path: ROUTES.ADMIN, icon: ShieldCheck }] : []),
   ];
 
   return (

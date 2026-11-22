@@ -141,14 +141,16 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({ user, onLogout
               Offers & Onboarding
             </Link>
 
-            <Link
-              to={ROUTES.HR_PIPELINE}
-              onClick={() => setDropdownOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-600 transition"
-            >
-              <CheckCircle2 className="w-4 h-4 text-slate-400" />
-              HR Workspace
-            </Link>
+            {role !== 'CANDIDATE' && (
+              <Link
+                to={ROUTES.HR_PIPELINE}
+                onClick={() => setDropdownOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-600 transition"
+              >
+                <CheckCircle2 className="w-4 h-4 text-slate-400" />
+                HR Workspace
+              </Link>
+            )}
 
             {role !== 'CANDIDATE' && (
               <Link

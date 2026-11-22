@@ -231,9 +231,15 @@ export class AnalyticsService {
     const totalApps = Number(appRow.total_applications || 0);
 
     const funnelSql = `
+      WITH filtered_apps AS (
+        SELECT a.id, a.current_stage
+        FROM applications a
+        JOIN jobs j ON a.job_id = j.id
+        ${appWhere}
+      )
       SELECT
         s.stage,
-        COUNT(DISTINCT a.id)::bigint AS count
+        COUNT(DISTINCT fa.id)::bigint AS count
       FROM (
         VALUES 
           ('APPLIED'::text, 1),
@@ -243,16 +249,14 @@ export class AnalyticsService {
           ('OFFERED'::text, 5),
           ('HIRED'::text, 6)
       ) AS s(stage, step_order)
-      LEFT JOIN applications a ON (
-        a.current_stage = s.stage
+      LEFT JOIN filtered_apps fa ON (
+        fa.current_stage = s.stage
         OR EXISTS (
           SELECT 1 FROM application_stage_history ash 
-          WHERE ash.application_id = a.id AND ash.to_stage = s.stage
+          WHERE ash.application_id = fa.id AND ash.to_stage = s.stage
         )
         OR (s.stage = 'APPLIED')
       )
-      JOIN jobs j ON a.job_id = j.id
-      ${appWhere}
       GROUP BY s.stage, s.step_order
       ORDER BY s.step_order ASC;
     `;

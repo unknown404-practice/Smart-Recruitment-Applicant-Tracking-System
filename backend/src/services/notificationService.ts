@@ -264,7 +264,7 @@ export async function getNotificationDeliveryLogs(filter?: {
   const limitIndex = status ? '$2' : '$1';
   const offsetIndex = status ? '$3' : '$2';
 
-  const countSql = `SELECT COUNT(*) AS total FROM notification_events ${whereClause};`;
+  const countSql = `SELECT COUNT(*) AS total FROM notification_events n ${whereClause};`;
   const countParams = status ? [status] : [];
   const countRes = await query(countSql, countParams);
   const total = parseInt(countRes.rows[0]?.total || '0', 10);

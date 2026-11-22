@@ -132,10 +132,20 @@ BEGIN
       AND (p_end_date IS NULL OR ie.scheduled_start <= (p_end_date AT TIME ZONE 'UTC'));
 
     -- Construct Full 6-Stage Recruitment Funnel with relative and absolute conversion rates
-    WITH stage_reach AS (
+    WITH filtered_applications AS (
+        SELECT a.id, a.current_stage, a.applied_at
+        FROM applications a
+        JOIN jobs j ON a.job_id = j.id
+        WHERE j.company_id = p_company_id
+          AND (p_job_id IS NULL OR j.id = p_job_id)
+          AND (p_department IS NULL OR j.department = p_department)
+          AND (p_start_date IS NULL OR a.applied_at >= (p_start_date AT TIME ZONE 'UTC'))
+          AND (p_end_date IS NULL OR a.applied_at <= (p_end_date AT TIME ZONE 'UTC'))
+    ),
+    stage_reach AS (
         SELECT
-            stage,
-            COUNT(DISTINCT a.id) AS candidate_count
+            s.stage,
+            COUNT(DISTINCT fa.id) AS candidate_count
         FROM (
             VALUES 
                 ('APPLIED'::TEXT, 1),
@@ -145,23 +155,17 @@ BEGIN
                 ('OFFERED'::TEXT, 5),
                 ('HIRED'::TEXT, 6)
         ) AS s(stage, step_order)
-        LEFT JOIN applications a ON (
+        LEFT JOIN filtered_applications fa ON (
             -- Candidate reached this stage either by currently being at/past it, or having a stage history transition to it
-            a.current_stage = s.stage
+            fa.current_stage = s.stage
             OR EXISTS (
                 SELECT 1 FROM application_stage_history ash 
-                WHERE ash.application_id = a.id AND ash.to_stage = s.stage
+                WHERE ash.application_id = fa.id AND ash.to_stage = s.stage
             )
             OR (s.stage = 'APPLIED') -- All applications start at APPLIED
         )
-        JOIN jobs j ON a.job_id = j.id
-        WHERE j.company_id = p_company_id
-          AND (p_job_id IS NULL OR j.id = p_job_id)
-          AND (p_department IS NULL OR j.department = p_department)
-          AND (p_start_date IS NULL OR a.applied_at >= (p_start_date AT TIME ZONE 'UTC'))
-          AND (p_end_date IS NULL OR a.applied_at <= (p_end_date AT TIME ZONE 'UTC'))
-        GROUP BY stage, step_order
-        ORDER BY step_order ASC
+        GROUP BY s.stage, s.step_order
+        ORDER BY s.step_order ASC
     )
     SELECT jsonb_agg(
         jsonb_build_object(
