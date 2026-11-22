@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
+import { User, onIdTokenChanged } from 'firebase/auth';
 import { auth } from '../config/firebaseClient';
 import {
   loginWithEmail,
@@ -113,7 +113,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    // Listen to token refresh, revocation, and sign-in/out transitions (Floor 23)
+    const unsubscribe = onIdTokenChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         await syncProfile(currentUser);

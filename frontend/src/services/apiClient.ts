@@ -45,7 +45,10 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.warn('[ApiClient] Unauthorized request. Token may be expired.');
+      console.warn('[ApiClient] Unauthorized request. Token may be expired or revoked.');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ats:auth-unauthorized'));
+      }
     }
     return Promise.reject(error);
   }
