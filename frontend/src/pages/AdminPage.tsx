@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Button, Badge, Modal, Input, Select } from '../components/ui';
 import { apiClient } from '../services/apiClient';
+import { useAuth } from '../context/AuthContext';
 import { NotificationDeliveryLog } from '../components/notification';
 import { ActivityTimeline } from '../components/activity';
 import { useActivityFeed } from '../hooks/useActivityFeed';
@@ -47,6 +48,69 @@ export interface AdminUser {
   last_active?: string;
 }
 
+const FALLBACK_ADMIN_USERS: AdminUser[] = [
+  {
+    id: '7b6ac4e6-f6ab-4dbf-95d4-afb61e8171a8',
+    firebase_uid: 'seed-admin-001',
+    full_name: 'Alex Admin',
+    email: 'admin@ats.local',
+    role: 'ADMIN',
+    is_active: true,
+    created_at: '2026-11-09T09:00:00Z',
+    last_active: 'Just now',
+  },
+  {
+    id: '3602a4dc-d99b-4d40-93d4-9e367a7b6ad3',
+    firebase_uid: 'seed-hr-001',
+    full_name: 'Helen Recruiter',
+    email: 'hr@ats.local',
+    role: 'HR',
+    is_active: true,
+    created_at: '2026-11-09T09:30:00Z',
+    last_active: '15 mins ago',
+  },
+  {
+    id: '5f374c07-7ea4-446b-ac08-3623a1bc5b87',
+    firebase_uid: 'seed-candidate-001',
+    full_name: 'Charlie Candidate',
+    email: 'candidate@ats.local',
+    role: 'CANDIDATE',
+    is_active: true,
+    created_at: '2026-11-10T08:45:00Z',
+    last_active: '3 hours ago',
+  },
+  {
+    id: '500be0f8-a9f6-47dd-bdde-6a7d5ec4ade5',
+    firebase_uid: 'seed-cand-006',
+    full_name: 'Olivia Wang',
+    email: 'olivia.wang@example.com',
+    role: 'CANDIDATE',
+    is_active: true,
+    created_at: '2026-11-10T10:10:00Z',
+    last_active: '1 hour ago',
+  },
+  {
+    id: '8ad275e5-670e-414d-9c27-e82017954617',
+    firebase_uid: 'seed-cand-001',
+    full_name: 'Charlie Chen',
+    email: 'charlie.chen@example.com',
+    role: 'CANDIDATE',
+    is_active: true,
+    created_at: '2026-11-10T11:00:00Z',
+    last_active: '4 hours ago',
+  },
+  {
+    id: '467b00b7-15a4-41e2-9a41-7dd07d80a5c1',
+    firebase_uid: 'seed-cand-002',
+    full_name: 'Maya Patel',
+    email: 'maya.patel@example.com',
+    role: 'CANDIDATE',
+    is_active: true,
+    created_at: '2026-11-10T12:00:00Z',
+    last_active: '2 days ago',
+  },
+];
+
 export interface CompanySettings {
   id?: string;
   name: string;
@@ -64,71 +128,14 @@ interface ToastNotification {
 }
 
 export const AdminPage: React.FC = () => {
+  const { user: authUser, loading: authLoading } = useAuth();
+
   // ---------------------------------------------------------------------------
   // 1. Initial State Data (aligned with 001_users_companies schema)
   // ---------------------------------------------------------------------------
-  const [users, setUsers] = useState<AdminUser[]>([
-    {
-      id: 'usr-001',
-      firebase_uid: 'fb-admin-lead-01',
-      full_name: 'Ranadeep Saha',
-      email: 'ranadeep@smartats.com',
-      role: 'ADMIN',
-      is_active: true,
-      created_at: '2026-11-09T09:00:00Z',
-      last_active: '2 mins ago',
-    },
-    {
-      id: 'usr-002',
-      firebase_uid: 'fb-admin-rekha-02',
-      full_name: 'Rekha (Frontend Lead)',
-      email: 'rekha@smartats.com',
-      role: 'ADMIN',
-      is_active: true,
-      created_at: '2026-11-09T09:30:00Z',
-      last_active: 'Just now',
-    },
-    {
-      id: 'usr-003',
-      firebase_uid: 'fb-hr-lead-03',
-      full_name: 'Priya Sharma (HR Lead)',
-      email: 'priya.hr@smartats.com',
-      role: 'HR',
-      is_active: true,
-      created_at: '2026-11-09T11:15:00Z',
-      last_active: '15 mins ago',
-    },
-    {
-      id: 'usr-004',
-      firebase_uid: 'fb-hr-recruiter-04',
-      full_name: 'David Lee (Talent Specialist)',
-      email: 'david.recruiter@smartats.com',
-      role: 'HR',
-      is_active: true,
-      created_at: '2026-11-09T14:20:00Z',
-      last_active: '1 hour ago',
-    },
-    {
-      id: 'usr-005',
-      firebase_uid: 'fb-cand-alex-05',
-      full_name: 'Alex Morgan',
-      email: 'alex.morgan@example.com',
-      role: 'CANDIDATE',
-      is_active: true,
-      created_at: '2026-11-10T08:45:00Z',
-      last_active: '3 hours ago',
-    },
-    {
-      id: 'usr-006',
-      firebase_uid: 'fb-cand-samira-06',
-      full_name: 'Samira Khan',
-      email: 'samira.khan@example.com',
-      role: 'CANDIDATE',
-      is_active: false,
-      created_at: '2026-11-10T10:10:00Z',
-      last_active: '2 days ago',
-    },
-  ]);
+  const [users, setUsers] = useState<AdminUser[]>(FALLBACK_ADMIN_USERS);
+  const [usersLoading, setUsersLoading] = useState<boolean>(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
   const [company, setCompany] = useState<CompanySettings>({
     name: 'TechPulse Global Corp',
@@ -202,35 +209,47 @@ export const AdminPage: React.FC = () => {
   // ---------------------------------------------------------------------------
   // 2. Fetch Live Data from Backend (Contract-First Fallback)
   // ---------------------------------------------------------------------------
-  useEffect(() => {
-    let isMounted = true;
-    apiClient
-      .get('/admin/users')
-      .then((res) => {
-        if (isMounted && res.data && Array.isArray(res.data.users)) {
-          setUsers(res.data.users);
-        }
-      })
-      .catch(() => {
-        // Fallback silently to client mock dataset for offline development
-      });
-
-    apiClient
-      .get('/admin/company')
-      .then((res) => {
-        if (isMounted && res.data && res.data.company) {
-          setCompany(res.data.company);
-          setCompanyForm(res.data.company);
-        }
-      })
-      .catch(() => {
-        // Fallback silently
-      });
-
-    return () => {
-      isMounted = false;
-    };
+  const fetchUsers = useCallback(async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+    try {
+      const res = await apiClient.get('/admin/users');
+      if (res.data && Array.isArray(res.data.users)) {
+        setUsers(res.data.users);
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.error?.message || err.message || 'Failed to retrieve registered users';
+      setUsersError(msg);
+      console.warn('[AdminPage] Users fetch warning:', msg);
+    } finally {
+      setUsersLoading(false);
+    }
   }, []);
+
+  const fetchCompany = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/admin/company');
+      if (res.data && res.data.company) {
+        setCompany(res.data.company);
+        setCompanyForm(res.data.company);
+      }
+    } catch (err) {
+      console.warn('[AdminPage] Company fetch warning:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading) {
+      fetchUsers();
+      fetchCompany();
+    }
+  }, [authLoading, authUser, fetchUsers, fetchCompany]);
+
+  useEffect(() => {
+    if (activeTab === 'users' && !authLoading) {
+      fetchUsers();
+    }
+  }, [activeTab, authLoading, fetchUsers]);
 
   // ---------------------------------------------------------------------------
   // 3. User Filtering & Search Logic
@@ -268,6 +287,13 @@ export const AdminPage: React.FC = () => {
   // 4. Status Toggle Handler (with instant feedback)
   // ---------------------------------------------------------------------------
   const handleToggleStatus = async (user: AdminUser) => {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(user.id);
+    if (!isUuid) {
+      addToast(`Invalid user ID format for "${user.full_name}". Refreshing latest database users...`, 'error');
+      await fetchUsers();
+      return;
+    }
+
     const newStatus = !user.is_active;
 
     // Optimistic local state update for instant UI feedback
@@ -302,6 +328,13 @@ export const AdminPage: React.FC = () => {
 
   const handleSaveRole = async () => {
     if (!selectedUser) return;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(selectedUser.id);
+    if (!isUuid) {
+      addToast(`Invalid user ID format for "${selectedUser.full_name}". Refreshing latest database users...`, 'error');
+      await fetchUsers();
+      return;
+    }
+
     setIsUpdatingRole(true);
 
     const prevRole = selectedUser.role;
@@ -380,7 +413,7 @@ export const AdminPage: React.FC = () => {
         setUsers((prev) => [createdUser, ...prev.filter((u) => u.id !== createdUser.id)]);
       } else {
         const newUser: AdminUser = {
-          id: `usr-${Date.now().toString().slice(-4)}`,
+          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-4000-a000-${Date.now().toString().slice(-12).padStart(12, '0')}`,
           firebase_uid: `fb-${Date.now().toString().slice(-6)}`,
           full_name: newUserName.trim(),
           email: newUserEmail.trim(),
@@ -730,10 +763,39 @@ export const AdminPage: React.FC = () => {
                 Inspect, modify roles, and toggle access states for all registered accounts.
               </p>
             </div>
-            <div className="text-xs font-semibold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200/70">
-              Showing {filteredUsers.length} of {users.length} Users
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchUsers}
+                disabled={usersLoading}
+                leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${usersLoading ? 'animate-spin' : ''}`} />}
+                className="text-xs font-semibold hover:border-brand-300"
+              >
+                Refresh
+              </Button>
+              <div className="text-xs font-semibold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200/70">
+                Showing {filteredUsers.length} of {users.length} Users
+              </div>
             </div>
           </div>
+
+          {/* Error Banner if Users Fetch Failed */}
+          {usersError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-center justify-between text-xs text-rose-700">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                <span>{usersError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={fetchUsers}
+                className="font-semibold underline hover:text-rose-900 ml-4 cursor-pointer"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
 
           {/* Search & Filter Toolbar */}
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2">
@@ -797,7 +859,16 @@ export const AdminPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredUsers.length === 0 ? (
+              {usersLoading && users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2 text-slate-400">
+                      <RefreshCw className="w-8 h-8 animate-spin text-brand-600" />
+                      <p className="text-sm font-semibold text-slate-600">Loading registered user accounts...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2 text-slate-400">

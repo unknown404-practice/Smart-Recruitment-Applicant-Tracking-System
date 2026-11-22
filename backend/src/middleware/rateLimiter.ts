@@ -110,13 +110,18 @@ export function createRateLimiter(options: RateLimiterOptions = {}) {
 
 /**
  * 1. Global API Rate Limiter
- * 150 requests per minute per IP for general endpoints
+ * 150 requests per minute per IP for general endpoints (1000 in development)
  */
 export const generalRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
-  max: 150,
+  max: process.env.NODE_ENV === 'development' ? 1000 : 150,
   message: 'API rate limit exceeded.',
-  skip: (req) => req.path === '/api/health' || req.path === '/',
+  skip: (req) =>
+    req.path === '/health' ||
+    req.path === '/api/health' ||
+    (Boolean(req.originalUrl) && req.originalUrl.includes('/health')) ||
+    req.path === '/' ||
+    (Boolean(req.originalUrl) && req.originalUrl === '/'),
 });
 
 /**
@@ -128,7 +133,11 @@ export const authRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   max: process.env.NODE_ENV === 'development' ? 120 : 30,
   message: 'Too many authentication attempts.',
-  skip: (req) => req.method === 'GET' && req.path === '/api/auth/me',
+  skip: (req) =>
+    req.method === 'GET' &&
+    (req.path === '/me' ||
+      req.path === '/api/auth/me' ||
+      (Boolean(req.originalUrl) && req.originalUrl.includes('/auth/me'))),
 });
 
 /**
