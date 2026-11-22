@@ -417,7 +417,7 @@ Establish Schema / API Contract               Build UI & State using Mock Data (
   * Deploy backend, PostgreSQL, and frontend to cloud hosting and verify live connectivity.
 * [ ] **Backend:** `feat(backend): add readiness probe endpoint and openapi collection export`
   * Implement `/api/health/readiness` (checking DB + Firebase connectivity) and export `docs/openapi.json`.
-* [ ] **Frontend 1:** `docs(ui): capture high-resolution screenshots of all 7 role dashboards`
+* [x] **Frontend 1:** `docs(ui): capture high-resolution screenshots of all 7 role dashboards`
   * Capture crisp screenshots of all 7 dashboards for documentation and presentation slides.
 * [ ] **Frontend 2:** `chore(frontend): optimize production bundle chunk splitting and lazy routes`
   * Configure Vite production chunk-splitting, lazy route imports, and verify bundle size < 500 KB.
