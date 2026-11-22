@@ -143,7 +143,7 @@ export const HrOffersPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-2xs font-extrabold uppercase tracking-wide bg-brand-50 text-brand-700 border border-brand-200">
-              Floor 18 &bull; Offer Management
+              Enterprise Offer Lifecycle
             </span>
             <span className="text-xs text-slate-500 font-medium">Enterprise Onboarding Engine</span>
           </div>

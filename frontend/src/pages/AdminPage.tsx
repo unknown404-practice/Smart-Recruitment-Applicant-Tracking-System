@@ -601,7 +601,7 @@ export const AdminPage: React.FC = () => {
             }`}
           >
             <History className="w-4 h-4 text-brand-600" />
-            <span>Activity Feed (Floor 20)</span>
+            <span>Activity Feed</span>
             <span className="px-2 py-0.5 rounded-full text-2xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
               Live Feed
             </span>
@@ -705,7 +705,7 @@ export const AdminPage: React.FC = () => {
             filters={activityFilters}
             onFilterChange={setActivityFilters}
             onRefresh={refreshActivity}
-            title="Unified System Activity Feed (Floor 20)"
+            title="Unified System Activity Feed"
             subtitle="Real-time multi-tenant audit trail tracking stage machine transitions, interview scheduling, offer issuances, and email dispatches."
           />
         </motion.div>

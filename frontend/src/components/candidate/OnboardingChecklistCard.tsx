@@ -117,7 +117,7 @@ export const OnboardingChecklistCard: React.FC<OnboardingChecklistCardProps> = (
                 New Hire Onboarding Checklist
               </h3>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                Floor 19
+                Action Items
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500">

@@ -326,8 +326,8 @@ export const HrInterviewsPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-bold text-slate-900">Interview Schedules</h1>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-              Page 5 • Floor 15
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+              Active Interview Loops
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
