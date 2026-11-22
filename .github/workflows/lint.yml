@@ -37,6 +37,10 @@ jobs:
           cd backend
           npm test
 
+      - name: Run CI Automated Secret Scan (Floor 23)
+        run: |
+          node ./backend/node_modules/ts-node/dist/bin.js --project ./backend/tsconfig.json scripts/scan-secrets.ts
+
   lint-frontend:
     name: Frontend Lint & Typecheck
     runs-on: ubuntu-latest

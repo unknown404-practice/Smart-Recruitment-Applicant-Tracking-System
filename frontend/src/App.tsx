@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { NetworkStatusBanner } from './components/common/NetworkStatusBanner';
+import { SessionExpiryModal } from './components/common/SessionExpiryModal';
 import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
@@ -33,6 +34,7 @@ export const App: React.FC = () => {
         <NetworkStatusBanner />
         <AuthProvider>
           <BrowserRouter>
+            <SessionExpiryModal />
             <Routes>
               <Route element={<AppLayout />}>
                 {/* Public Routes */}

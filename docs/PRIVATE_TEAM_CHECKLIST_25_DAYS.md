@@ -398,15 +398,15 @@ Establish Schema / API Contract               Build UI & State using Mock Data (
 ---
 
 #### 🔹 Day 23 (Floor 23): Security Hardening, Rate Limiting & Input Sanitization
-* [ ] **Cloud:** `security(cloud): enable firebase token revocation check and audit env files`
+* [x] **Cloud:** `security(cloud): enable firebase token revocation check and audit env files`
   * Audit Firebase token revocation (`checkRevoked = true`), rotate demo keys, verify zero git secrets.
-* [ ] **Backend:** `security(backend): enforce strict html escaping and input validation rules`
+* [x] **Backend:** `security(backend): enforce strict html escaping and input validation rules`
   * Audit controllers for SQL parameterization, XSS escaping in offer templates, and standard error envelopes.
-* [ ] **Frontend 1:** `feat(ui): add session expiry modal and client upload sanitization`
+* [x] **Frontend 1:** `feat(ui): add session expiry modal and client upload sanitization`
   * Add session-expiry auto-logout warning modal and client upload file-extension check.
-* [ ] **Frontend 2:** `feat(auth-ui): add token refresh listener and automatic auth state purge`
+* [x] **Frontend 2:** `feat(auth-ui): add token refresh listener and automatic auth state purge`
   * Implement automatic Firebase token refresh listener and clean token purge on 401 response.
-* [ ] **Leader / DevOps:** `security(devops): add api rate limiting helmet csp headers and secret scan`
+* [x] **Leader / DevOps:** `security(devops): add api rate limiting helmet csp headers and secret scan`
   * Add `express-rate-limit` on auth/upload routes, strict Helmet CSP headers, and CI secret scanner.
 * **Daily Done Criteria:** Rapid requests trigger 429 Too Many Requests; automated secret scanner finds 0 secrets.
 
