@@ -43,7 +43,7 @@ function escapeSqlLike(str: string): string {
 export async function getActivityFeed(req: Request, res: Response): Promise<void> {
   try {
     const callerRole = (req.user?.role || '').toUpperCase();
-    const callerCompanyId = req.user?.companyId;
+    let callerCompanyId = req.user?.companyId;
 
     if (!req.user) {
       res.status(401).json({
@@ -56,6 +56,18 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
     // Role-based access control (SEC-06)
     const isGlobalAdmin = callerRole === 'ADMIN' || callerRole === 'SUPER_ADMIN';
     const isCompanyStaff = callerRole === 'HR' || callerRole === 'HR_MANAGER' || callerRole === 'RECRUITER';
+
+    if (!callerCompanyId && isCompanyStaff && req.user.uid) {
+      try {
+        const uRes = await query<{ company_id: string | null }>(
+          'SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;',
+          [req.user.uid]
+        );
+        callerCompanyId = uRes.rows[0]?.company_id || null;
+      } catch {
+        // preserve callerCompanyId as null
+      }
+    }
 
     if (!isGlobalAdmin && !isCompanyStaff) {
       res.status(403).json({
