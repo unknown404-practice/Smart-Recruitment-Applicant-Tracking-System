@@ -56,7 +56,8 @@ export const InterviewCalendarView: React.FC<InterviewCalendarViewProps> = ({
     const map: Record<string, InterviewEvent[]> = {};
     interviews.forEach((inv) => {
       // Parse ISO string to YYYY-MM-DD
-      const datePart = inv.scheduledStart.split('T')[0];
+      const datePart = (inv.scheduledStart || '').split('T')[0];
+      if (!datePart) return;
       if (!map[datePart]) {
         map[datePart] = [];
       }
@@ -234,8 +235,8 @@ export const InterviewCalendarView: React.FC<InterviewCalendarViewProps> = ({
                       className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100/90 text-purple-900 truncate hover:bg-purple-200 transition"
                       title={`${ev.title} — ${ev.candidateName}`}
                     >
-                      <span className="font-semibold">{ev.scheduledStart.split('T')[1]?.slice(0, 5)}</span>{' '}
-                      {ev.candidateName.split(' ')[0]}
+                      <span className="font-semibold">{(ev.scheduledStart || '').split('T')[1]?.slice(0, 5) || '--:--'}</span>{' '}
+                      {(ev.candidateName || '').split(' ')[0] || 'Candidate'}
                     </div>
                   ))}
                   {dayEvents.length > 2 && (
@@ -318,8 +319,8 @@ export const InterviewCalendarView: React.FC<InterviewCalendarViewProps> = ({
                   <div className="flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-slate-400" />
                     <span>
-                      {ev.scheduledStart.split('T')[1]?.slice(0, 5)} -{' '}
-                      {ev.scheduledEnd.split('T')[1]?.slice(0, 5)} UTC
+                      {(ev.scheduledStart || '').split('T')[1]?.slice(0, 5) || '--:--'} -{' '}
+                      {(ev.scheduledEnd || '').split('T')[1]?.slice(0, 5) || '--:--'} UTC
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">

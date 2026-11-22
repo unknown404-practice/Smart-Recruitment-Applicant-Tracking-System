@@ -32,7 +32,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      await signIn(email, password, role);
       setSuccessMessage(`Signed in successfully as ${email}`);
       navigate(from, { replace: true });
     } catch (err: any) {
@@ -133,7 +133,19 @@ export const LoginPage: React.FC = () => {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setRole(item.id)}
+                onClick={() => {
+                  setRole(item.id);
+                  if (item.id === 'CANDIDATE') {
+                    setEmail('candidate@ats.local');
+                    setPassword('CandidatePassword123!');
+                  } else if (item.id === 'HR') {
+                    setEmail('hr@ats.local');
+                    setPassword('HrPassword123!');
+                  } else if (item.id === 'ADMIN') {
+                    setEmail('admin@ats.local');
+                    setPassword('AdminPassword123!');
+                  }
+                }}
                 className={`py-2 text-xs font-medium rounded-md transition ${
                   role === item.id
                     ? 'bg-white text-brand-700 shadow-sm font-semibold'
@@ -143,6 +155,73 @@ export const LoginPage: React.FC = () => {
                 {item.label}
               </button>
             ))}
+          </div>
+
+          {/* Quick Demo 1-Click Access */}
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
+            <span className="text-2xs font-semibold text-slate-400 uppercase tracking-wider">Demo Quick:</span>
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={async () => {
+                  setRole('CANDIDATE');
+                  setEmail('candidate@ats.local');
+                  setPassword('CandidatePassword123!');
+                  try {
+                    setLoading(true);
+                    await signIn('candidate@ats.local', 'CandidatePassword123!', 'CANDIDATE');
+                    navigate(from, { replace: true });
+                  } catch (err: any) {
+                    setErrorMessage(err.message || 'Candidate sign in failed');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="px-2 py-0.5 rounded text-2xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+              >
+                👤 Candidate
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setRole('HR');
+                  setEmail('hr@ats.local');
+                  setPassword('HrPassword123!');
+                  try {
+                    setLoading(true);
+                    await signIn('hr@ats.local', 'HrPassword123!', 'HR');
+                    navigate(from, { replace: true });
+                  } catch (err: any) {
+                    setErrorMessage(err.message || 'HR sign in failed');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="px-2 py-0.5 rounded text-2xs font-medium bg-blue-50 hover:bg-blue-100 text-blue-700 transition"
+              >
+                💼 HR Lead
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setRole('ADMIN');
+                  setEmail('admin@ats.local');
+                  setPassword('AdminPassword123!');
+                  try {
+                    setLoading(true);
+                    await signIn('admin@ats.local', 'AdminPassword123!', 'ADMIN');
+                    navigate(from, { replace: true });
+                  } catch (err: any) {
+                    setErrorMessage(err.message || 'Admin sign in failed');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="px-2 py-0.5 rounded text-2xs font-medium bg-purple-50 hover:bg-purple-100 text-purple-700 transition"
+              >
+                🛡️ Super Admin
+              </button>
+            </div>
           </div>
         </div>
 

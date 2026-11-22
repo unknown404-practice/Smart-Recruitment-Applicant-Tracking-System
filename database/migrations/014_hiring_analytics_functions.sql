@@ -157,10 +157,10 @@ BEGIN
         ) AS s(stage, step_order)
         LEFT JOIN filtered_applications fa ON (
             -- Candidate reached this stage either by currently being at/past it, or having a stage history transition to it
-            fa.current_stage = s.stage
+            fa.current_stage::TEXT = s.stage
             OR EXISTS (
                 SELECT 1 FROM application_stage_history ash
-                WHERE ash.application_id = fa.id AND ash.to_stage = s.stage
+                WHERE ash.application_id = fa.id AND ash.to_stage::TEXT = s.stage
             )
             OR (s.stage = 'APPLIED') -- All applications start at APPLIED
         )

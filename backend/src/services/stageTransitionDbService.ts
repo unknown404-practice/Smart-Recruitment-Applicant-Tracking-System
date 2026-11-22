@@ -72,8 +72,8 @@ export const LOCK_APPLICATION_FOR_UPDATE_SQL = `
 
 export const UPDATE_APPLICATION_STAGE_SQL = `
   UPDATE applications
-  SET current_stage = $1,
-      hired_at = CASE WHEN $1 = 'HIRED' THEN CURRENT_TIMESTAMP ELSE hired_at END,
+  SET current_stage = $1::application_stage,
+      hired_at = CASE WHEN $1::text = 'HIRED' THEN CURRENT_TIMESTAMP ELSE hired_at END,
       updated_at = CURRENT_TIMESTAMP
   WHERE id = $2
   RETURNING id, job_id, candidate_id, current_stage, updated_at;
@@ -81,7 +81,7 @@ export const UPDATE_APPLICATION_STAGE_SQL = `
 
 export const INSERT_STAGE_AUDIT_LOG_SQL = `
   INSERT INTO application_stage_history (application_id, from_stage, to_stage, changed_by, reason)
-  VALUES ($1, $2, $3, $4, $5)
+  VALUES ($1, $2::application_stage, $3::application_stage, $4, $5)
   RETURNING id, application_id, from_stage, to_stage, changed_by, reason, changed_at;
 `;
 

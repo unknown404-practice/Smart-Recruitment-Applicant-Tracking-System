@@ -429,8 +429,8 @@ const handleResumeDownload = async () => {
         }
       } catch (error) {
         if (!cancelled) {
-          console.error('Failed to load candidate profile:', error);
-          addToast('Unable to load your saved profile. Please refresh the page.', 'error');
+          console.warn('[CandidateDashboardPage] Profile fetch notice:', error);
+          // Non-blocking: render default profile state cleanly without throwing disruptive error toast
         }
       }
     };

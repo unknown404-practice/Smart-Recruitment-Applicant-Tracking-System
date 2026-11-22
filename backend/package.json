@@ -4,7 +4,7 @@
   "description": "Smart Recruitment & Applicant Tracking System - Express & TypeScript Backend",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "node ./node_modules/ts-node-dev/lib/bin.js --respawn --transpile-only src/server.ts",
+    "dev": "node ./node_modules/ts-node-dev/lib/bin.js --respawn --exit-child --transpile-only src/server.ts",
     "build": "node ./node_modules/typescript/bin/tsc",
     "start": "node dist/server.js",
     "test": "node ./node_modules/jest/bin/jest.js --runInBand --detectOpenHandles",
