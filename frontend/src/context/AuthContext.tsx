@@ -38,9 +38,18 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function inferRoleFromEmail(email?: string | null): string | null {
+  if (!email) return null;
+  const lower = email.toLowerCase();
+  if (lower.startsWith('admin@') || lower.includes('admin')) return 'ADMIN';
+  if (lower.startsWith('hr@') || lower.includes('hr lead') || lower.includes('recruiter')) return 'HR';
+  return null;
+}
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [dbUser, setDbUser] = useState<DbUserProfile | null>(null);
+  const [tokenRole, setTokenRole] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,13 +101,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         } catch {
           // FE-06: Ensure synthetic fallback profile uses a valid UUID (not Firebase UID)
+          const inferredRole = inferRoleFromEmail(firebaseUser.email);
+          const resolvedFallbackRole = (effectiveRole as any) || tokenRole || inferredRole || 'CANDIDATE';
+          const isStaff = ['HR', 'ADMIN', 'RECRUITER', 'SUPER_ADMIN'].includes(resolvedFallbackRole);
           const fallbackProfile: DbUserProfile = {
             id: '00000000-0000-0000-0000-000000000000',
             firebase_uid: firebaseUser.uid,
             email: firebaseUser.email || '',
-            full_name: effectiveFullName || 'ATS User',
-            role: (effectiveRole as any) || 'CANDIDATE',
-            company_id: null,
+            full_name: effectiveFullName || (isStaff ? 'Staff User' : 'ATS User'),
+            role: resolvedFallbackRole,
+            company_id: isStaff ? 'a0000000-0000-0000-0000-000000000001' : null,
             avatar_url: firebaseUser.photoURL || null,
             is_active: true,
             created_at: new Date().toISOString(),
@@ -124,9 +136,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const unsubscribe = onIdTokenChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        try {
+          const tokenRes = await currentUser.getIdTokenResult();
+          const claimRole = (tokenRes.claims.role as string) || null;
+          if (claimRole) {
+            setTokenRole(claimRole.toUpperCase());
+          }
+        } catch {
+          // ignore token parse errors
+        }
         await syncProfile(currentUser);
       } else {
         setDbUser(null);
+        setTokenRole(null);
       }
       setLoading(false);
     });
@@ -198,6 +220,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await logoutUser();
       setUser(null);
       setDbUser(null);
+      setTokenRole(null);
     } catch (err: any) {
       setError(err.message || 'Failed to sign out');
       throw err;
@@ -222,7 +245,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const role = dbUser?.role || 'CANDIDATE';
+  const role = dbUser?.role || tokenRole || inferRoleFromEmail(user?.email) || 'CANDIDATE';
 
   return (
     <AuthContext.Provider

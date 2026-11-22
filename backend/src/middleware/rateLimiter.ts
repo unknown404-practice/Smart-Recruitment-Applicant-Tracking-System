@@ -126,8 +126,9 @@ export const generalRateLimiter = createRateLimiter({
  */
 export const authRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
-  max: 30,
+  max: process.env.NODE_ENV === 'development' ? 120 : 30,
   message: 'Too many authentication attempts.',
+  skip: (req) => req.method === 'GET' && req.path === '/api/auth/me',
 });
 
 /**

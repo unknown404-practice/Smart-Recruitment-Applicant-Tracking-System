@@ -26,12 +26,16 @@ export class AnalyticsController {
 
       // Resolve tenant company_id
       let companyId = user.companyId;
-      if (!companyId && (role === 'ADMIN' || role === 'SUPER_ADMIN')) {
-        const adminLookup = await pool.query<{ company_id: string | null }>(
-          'SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;',
-          [user.uid]
-        );
-        companyId = adminLookup.rows[0]?.company_id || null;
+      if (!companyId) {
+        try {
+          const staffLookup = await pool.query<{ company_id: string | null }>(
+            'SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;',
+            [user.uid]
+          );
+          companyId = staffLookup?.rows?.[0]?.company_id || null;
+        } catch {
+          companyId = null;
+        }
       }
 
       if (!companyId) {
@@ -129,12 +133,16 @@ export class AnalyticsController {
       }
 
       let companyId = user.companyId;
-      if (!companyId && (role === 'ADMIN' || role === 'SUPER_ADMIN')) {
-        const adminLookup = await pool.query<{ company_id: string | null }>(
-          'SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;',
-          [user.uid]
-        );
-        companyId = adminLookup.rows[0]?.company_id || null;
+      if (!companyId) {
+        try {
+          const staffLookup = await pool.query<{ company_id: string | null }>(
+            'SELECT company_id FROM users WHERE firebase_uid = $1 LIMIT 1;',
+            [user.uid]
+          );
+          companyId = staffLookup?.rows?.[0]?.company_id || null;
+        } catch {
+          companyId = null;
+        }
       }
 
       if (!companyId) {

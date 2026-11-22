@@ -14,27 +14,19 @@ export const AppLayout: React.FC = () => {
     typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
   );
 
-  const { user, dbUser, signOut } = useAuth();
+  const { user, dbUser, role: authRole, signOut } = useAuth();
 
   // Show sidebar on HR and Admin routes
   const isWorkspaceRoute =
     location.pathname.startsWith('/hr') || location.pathname === '/admin';
 
-  const currentUser = dbUser
+  const currentUser = user
     ? {
-        uid: dbUser.firebase_uid,
-        email: dbUser.email,
-        fullName: dbUser.full_name,
-        role: dbUser.role,
-        avatarUrl: dbUser.avatar_url,
-      }
-    : user
-    ? {
-        uid: user.uid,
-        email: user.email,
-        fullName: user.displayName,
-        role: 'CANDIDATE',
-        avatarUrl: user.photoURL,
+        uid: dbUser?.firebase_uid || user.uid,
+        email: dbUser?.email || user.email,
+        fullName: dbUser?.full_name || user.displayName,
+        role: dbUser?.role || authRole,
+        avatarUrl: dbUser?.avatar_url || user.photoURL,
       }
     : null;
 
