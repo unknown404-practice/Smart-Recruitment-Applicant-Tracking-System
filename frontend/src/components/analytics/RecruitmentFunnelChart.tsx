@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Filter, ArrowDown, UserCheck, AlertCircle } from 'lucide-react';
+import { Filter, ArrowDown, UserCheck } from 'lucide-react';
 import { SPRING_GENTLE } from '../animations';
 
 export interface FunnelStageData {
