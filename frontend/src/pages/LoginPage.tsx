@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { SPRING_GENTLE } from '../components/animations';
 
 export const LoginPage: React.FC = () => {
+  const [role, setRole] = useState<'CANDIDATE' | 'HR' | 'ADMIN'>('CANDIDATE');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,8 +46,8 @@ export const LoginPage: React.FC = () => {
     setErrorMessage(null);
     setLoading(true);
     try {
-      await signInWithGoogle();
-      setSuccessMessage('Signed in via Google OAuth');
+      await signInWithGoogle(role);
+      setSuccessMessage(`Signed in via Google OAuth as ${role}`);
       navigate(from, { replace: true });
     } catch (err: any) {
       setErrorMessage(err.message || 'Google sign-in failed');
@@ -116,6 +117,35 @@ export const LoginPage: React.FC = () => {
           </div>
         )}
 
+        {/* Persona / Role Selector for Google Sign-In & Onboarding */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 uppercase mb-2">
+            Continue as
+          </label>
+          <div className="grid grid-cols-3 gap-2 p-1 bg-slate-100 rounded-lg">
+            {(
+              [
+                { id: 'CANDIDATE', label: 'Candidate' },
+                { id: 'HR', label: 'HR / Recruiter' },
+                { id: 'ADMIN', label: 'Admin' },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setRole(item.id)}
+                className={`py-2 text-xs font-medium rounded-md transition ${
+                  role === item.id
+                    ? 'bg-white text-brand-700 shadow-sm font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Google OAuth Button */}
         <button
           type="button"
@@ -141,7 +171,7 @@ export const LoginPage: React.FC = () => {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
-          Continue with Google
+          Continue with Google as {role === 'HR' ? 'HR' : role === 'ADMIN' ? 'Admin' : 'Candidate'}
         </button>
 
         <div className="relative flex items-center justify-center">

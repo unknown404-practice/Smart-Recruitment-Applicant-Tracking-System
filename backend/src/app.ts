@@ -20,6 +20,7 @@ import onboardingRoutes from './routes/onboardingRoutes';
 import activityRoutes from './routes/activityRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import { generalRateLimiter, authRateLimiter, submissionRateLimiter } from './middleware/rateLimiter';
 
 const app: Application = express();
 
@@ -115,6 +116,12 @@ app.get('/api/health', async (_req: Request, res: Response) => {
   }
 });
 
+// Rate Limiting Middlewares (SaaS Reliability & Brute-Force Defense)
+app.use('/api', generalRateLimiter);
+app.use('/api/auth', authRateLimiter);
+app.use('/api/applications', submissionRateLimiter);
+app.use('/api/resumes', submissionRateLimiter);
+
 // Authentication and RBAC endpoints
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -145,6 +152,9 @@ app.use('/api/onboarding', onboardingRoutes);
 
 // Unified System Activity Log & Audit Feed endpoints (Floor 20)
 app.use('/api/activity', activityRoutes);
+
+// Hiring Analytics Engine & Funnel Conversion KPIs (Floor 22)
+app.use('/api/analytics', analyticsRoutes);
 
 // Hiring KPI Analytics & Pipeline Insights endpoints (Floor 22)
 app.use('/api/analytics', analyticsRoutes);

@@ -106,7 +106,7 @@ export async function listAllUsers(req: Request, res: Response): Promise<void> {
     const params: any[] = [];
     let paramIndex = 1;
 
-    if (roleFilter && ['ADMIN', 'HR', 'CANDIDATE'].includes(roleFilter)) {
+    if (roleFilter && (ALLOWED_ADMIN_ROLES as readonly string[]).includes(roleFilter)) {
       conditions.push(`u.role = $${paramIndex++}`);
       params.push(roleFilter);
     }

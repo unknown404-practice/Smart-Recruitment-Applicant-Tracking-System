@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateFirebase, requireRole } from '../middleware/authMiddleware';
-import { getAnalyticsSummary } from '../controllers/analyticsController';
+import { AnalyticsController } from '../controllers/analyticsController';
 
 const router = Router();
 
@@ -9,22 +9,22 @@ router.use(authenticateFirebase);
 
 /**
  * GET /api/analytics/summary
- * Computes hiring KPI metrics (Volume, Stage Conversions, Time-to-Hire, Offer Acceptance).
- * Restricted to staff roles: ADMIN, SUPER_ADMIN, HR, HR_MANAGER, RECRUITER.
+ * Primary hiring KPI metrics and funnel aggregation endpoint.
  */
 router.get(
   '/summary',
   requireRole(['ADMIN', 'SUPER_ADMIN', 'HR', 'HR_MANAGER', 'RECRUITER']),
-  getAnalyticsSummary
+  AnalyticsController.getSummary
 );
 
 /**
- * GET /api/analytics (Alias to /summary)
+ * GET /api/analytics/filters
+ * Available jobs and departments for the caller's company.
  */
 router.get(
-  '/',
+  '/filters',
   requireRole(['ADMIN', 'SUPER_ADMIN', 'HR', 'HR_MANAGER', 'RECRUITER']),
-  getAnalyticsSummary
+  AnalyticsController.getFilters
 );
 
 export default router;

@@ -202,5 +202,7 @@ describe('Notification Service & Retry Engine (Floor 17)', () => {
     expect(telemetry.total).toBe(42);
     expect(telemetry.logs).toHaveLength(1);
     expect(telemetry.logs[0].recipient_email).toBe('user@example.com');
+    expect(mockQuery.mock.calls[0][0]).toContain('FROM notification_events n WHERE n.status = $1');
+    expect(mockQuery.mock.calls[0][1]).toEqual(['SENT']);
   });
 });
