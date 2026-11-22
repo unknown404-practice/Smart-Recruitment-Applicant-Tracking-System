@@ -664,11 +664,11 @@ export async function listInterviewers(req: Request, res: Response): Promise<voi
     const querySql = companyId
       ? `SELECT id, full_name, email, role
          FROM users
-         WHERE company_id = $1 AND role IN ('HR', 'ADMIN', 'INTERVIEWER', 'RECRUITER') AND is_active = TRUE
+         WHERE company_id = $1 AND role::text IN ('HR', 'ADMIN', 'INTERVIEWER', 'RECRUITER') AND is_active = TRUE
          ORDER BY full_name ASC;`
       : `SELECT id, full_name, email, role
          FROM users
-         WHERE role IN ('HR', 'ADMIN', 'INTERVIEWER', 'RECRUITER') AND is_active = TRUE
+         WHERE role::text IN ('HR', 'ADMIN', 'INTERVIEWER', 'RECRUITER') AND is_active = TRUE
          ORDER BY full_name ASC;`;
 
     const params = companyId ? [companyId] : [];

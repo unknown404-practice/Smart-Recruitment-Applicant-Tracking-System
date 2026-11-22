@@ -24,7 +24,7 @@ function normalizeDbRole(role?: string): DbRole {
   return 'CANDIDATE';
 }
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isValidUuid(id: unknown): id is string {
   return typeof id === 'string' && UUID_REGEX.test(id.trim());
@@ -42,6 +42,14 @@ const syncInputSchema = z.object({
 
 function getBootstrapAdminEmails(): string[] {
   const envEmails = process.env.BOOTSTRAP_ADMIN_EMAILS || '';
+  return envEmails
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function getBootstrapHrEmails(): string[] {
+  const envEmails = process.env.BOOTSTRAP_HR_EMAILS || '';
   return envEmails
     .split(',')
     .map((e) => e.trim().toLowerCase())
@@ -109,10 +117,17 @@ export async function syncUser(req: Request, res: Response): Promise<void> {
       }
 
       // Existing user: preserve assigned role and company_id to prevent client-side privilege escalation (SEC-01)
-      // If user's email is in BOOTSTRAP_ADMIN_EMAILS, elevate them to ADMIN; otherwise preserve their existing DB role.
+      // If user's email is in BOOTSTRAP_ADMIN_EMAILS, elevate them to ADMIN; if in BOOTSTRAP_HR_EMAILS, elevate to HR; otherwise preserve their existing DB role.
       const bootstrapAdmins = getBootstrapAdminEmails();
+      const bootstrapHrs = getBootstrapHrEmails();
       const shouldElevateToAdmin = bootstrapAdmins.includes(email.toLowerCase()) && existingUser.role !== 'ADMIN';
-      const targetRole = shouldElevateToAdmin ? 'ADMIN' : existingUser.role;
+      const shouldElevateToHr = bootstrapHrs.includes(email.toLowerCase()) && existingUser.role === 'CANDIDATE';
+      let targetRole = existingUser.role;
+      if (shouldElevateToAdmin) {
+        targetRole = 'ADMIN';
+      } else if (shouldElevateToHr) {
+        targetRole = 'HR';
+      }
 
       // Update firebase_uid if it changed (linking email collision, SEC-02)
       // Retain existing company_id: only set if users.company_id was null!
@@ -144,10 +159,13 @@ export async function syncUser(req: Request, res: Response): Promise<void> {
       // For existing users, SEC-01 strictly preserves existing role above.
       // For new signups, allow initial registration as CANDIDATE, HR, or ADMIN.
       const bootstrapAdmins = getBootstrapAdminEmails();
+      const bootstrapHrs = getBootstrapHrEmails();
       let role: DbRole = 'CANDIDATE';
 
       if (bootstrapAdmins.includes(email.toLowerCase())) {
         role = 'ADMIN';
+      } else if (bootstrapHrs.includes(email.toLowerCase())) {
+        role = 'HR';
       } else if (req.user?.role && typeof req.user.role === 'string') {
         // Trust verified claims from authenticated token if present
         role = normalizeDbRole(req.user.role);

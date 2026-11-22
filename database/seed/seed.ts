@@ -388,23 +388,29 @@ export async function runSeed(options: { closePool?: boolean } = { closePool: tr
       [DEMO_COMPANY.id, DEMO_COMPANY.name, DEMO_COMPANY.domain, JSON.stringify(DEMO_COMPANY.settings)]
     );
 
-    // 2. Seed Staff Users into PostgreSQL & Firebase Auth
-    for (const staff of DEMO_STAFF_USERS) {
-      console.log(`[Seed] Provisioning Staff: ${staff.email} (${staff.role})...`);
-      await client.query(
-        `
-        INSERT INTO users (firebase_uid, email, full_name, role, company_id, is_active, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), NOW())
-        ON CONFLICT (firebase_uid) DO UPDATE SET
-          email = EXCLUDED.email,
-          full_name = EXCLUDED.full_name,
-          role = EXCLUDED.role,
-          company_id = EXCLUDED.company_id,
-          is_active = TRUE,
-          updated_at = NOW();
-        `,
-        [staff.firebaseUid, staff.email, staff.fullName, staff.role, staff.companyId]
-      );
+    // 2. Seed Users into PostgreSQL & Firebase Auth
+    for (const staff of DEMO_USERS) {
+      console.log(`[Seed] Provisioning User: ${staff.email} (${staff.role})...`);
+      const existingEmailRes = await client.query('SELECT id, firebase_uid FROM users WHERE email = $1', [staff.email]);
+      if (existingEmailRes.rows.length > 0) {
+        await client.query(
+          `UPDATE users SET firebase_uid = $1, full_name = $2, role = $3, company_id = $4, is_active = TRUE, updated_at = NOW() WHERE email = $5`,
+          [staff.firebaseUid, staff.fullName, staff.role, staff.companyId, staff.email]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO users (firebase_uid, email, full_name, role, company_id, is_active, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), NOW())
+           ON CONFLICT (firebase_uid) DO UPDATE SET
+             email = EXCLUDED.email,
+             full_name = EXCLUDED.full_name,
+             role = EXCLUDED.role,
+             company_id = EXCLUDED.company_id,
+             is_active = TRUE,
+             updated_at = NOW();`,
+          [staff.firebaseUid, staff.email, staff.fullName, staff.role, staff.companyId]
+        );
+      }
 
       if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
         try {

@@ -28,7 +28,7 @@ export interface AuthContextType {
   role: string;
   loading: boolean;
   error: string | null;
-  signIn: (email: string, pass: string) => Promise<void>;
+  signIn: (email: string, pass: string, role?: string) => Promise<void>;
   signUp: (email: string, pass: string, fullName: string, role?: string) => Promise<void>;
   signInWithGoogle: (role?: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -46,12 +46,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // FE-05: Deduplication map for in-flight synchronization requests
   const syncInProgressRef = useRef<Map<string, Promise<DbUserProfile | null>>>(new Map());
+  // Pending role ref to prevent onIdTokenChanged race condition during registration / login
+  const pendingRoleRef = useRef<{ fullName?: string; role?: string } | null>(null);
 
   const syncProfile = async (
     firebaseUser: User,
     extraData?: { fullName?: string; role?: string }
   ): Promise<DbUserProfile | null> => {
-    const syncKey = `${firebaseUser.uid}`;
+    const effectiveRole = extraData?.role || pendingRoleRef.current?.role || undefined;
+    const effectiveFullName = extraData?.fullName || pendingRoleRef.current?.fullName || firebaseUser.displayName || undefined;
+    const syncKey = `${firebaseUser.uid}_${effectiveRole || ''}`;
     const existingSync = syncInProgressRef.current.get(syncKey);
     if (existingSync) {
       return existingSync;
@@ -60,8 +64,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const syncPromise = (async () => {
       try {
         const syncResult = await syncUserWithBackend({
-          fullName: extraData?.fullName || firebaseUser.displayName || undefined,
-          role: extraData?.role || undefined,
+          fullName: effectiveFullName,
+          role: effectiveRole,
           avatarUrl: firebaseUser.photoURL || undefined,
         });
 
@@ -92,8 +96,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             id: '00000000-0000-0000-0000-000000000000',
             firebase_uid: firebaseUser.uid,
             email: firebaseUser.email || '',
-            full_name: extraData?.fullName || firebaseUser.displayName || 'ATS User',
-            role: (extraData?.role as any) || 'CANDIDATE',
+            full_name: effectiveFullName || 'ATS User',
+            role: (effectiveRole as any) || 'CANDIDATE',
             company_id: null,
             avatar_url: firebaseUser.photoURL || null,
             is_active: true,
@@ -105,6 +109,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return null;
       } finally {
         syncInProgressRef.current.delete(syncKey);
+        if (pendingRoleRef.current?.role === effectiveRole) {
+          pendingRoleRef.current = null;
+        }
       }
     })();
 
@@ -127,13 +134,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  const signIn = async (email: string, pass: string): Promise<void> => {
+  const signIn = async (email: string, pass: string, role?: string): Promise<void> => {
     setError(null);
     setLoading(true);
     try {
+      if (role) {
+        pendingRoleRef.current = { role };
+      }
       const cred = await loginWithEmail(email, pass);
-      await syncProfile(cred.user);
+      await syncProfile(cred.user, role ? { role } : undefined);
     } catch (err: any) {
+      pendingRoleRef.current = null;
       setError(err.message || 'Failed to sign in');
       throw err;
     } finally {
@@ -150,9 +161,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
     setLoading(true);
     try {
+      pendingRoleRef.current = { fullName, role };
       const cred = await registerWithEmail(fullName, email, pass);
       await syncProfile(cred.user, { fullName, role });
     } catch (err: any) {
+      pendingRoleRef.current = null;
       setError(err.message || 'Failed to register account');
       throw err;
     } finally {
@@ -164,9 +177,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
     setLoading(true);
     try {
+      if (role) {
+        pendingRoleRef.current = { role };
+      }
       const cred = await loginWithGoogle();
       await syncProfile(cred.user, { role });
     } catch (err: any) {
+      pendingRoleRef.current = null;
       setError(err.message || 'Google sign-in failed');
       throw err;
     } finally {

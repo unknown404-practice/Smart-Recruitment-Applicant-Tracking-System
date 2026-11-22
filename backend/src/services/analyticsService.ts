@@ -250,10 +250,10 @@ export class AnalyticsService {
           ('HIRED'::text, 6)
       ) AS s(stage, step_order)
       LEFT JOIN filtered_apps fa ON (
-        fa.current_stage = s.stage
+        fa.current_stage::text = s.stage
         OR EXISTS (
           SELECT 1 FROM application_stage_history ash 
-          WHERE ash.application_id = fa.id AND ash.to_stage = s.stage
+          WHERE ash.application_id = fa.id AND ash.to_stage::text = s.stage
         )
         OR (s.stage = 'APPLIED')
       )
