@@ -156,9 +156,6 @@ app.use('/api/activity', activityRoutes);
 // Hiring Analytics Engine & Funnel Conversion KPIs (Floor 22)
 app.use('/api/analytics', analyticsRoutes);
 
-// Hiring KPI Analytics & Pipeline Insights endpoints (Floor 22)
-app.use('/api/analytics', analyticsRoutes);
-
 // 404 Not Found Handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({
