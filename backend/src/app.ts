@@ -18,6 +18,7 @@ import offerRoutes from './routes/offerRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import onboardingRoutes from './routes/onboardingRoutes';
 import activityRoutes from './routes/activityRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app: Application = express();
@@ -144,6 +145,9 @@ app.use('/api/onboarding', onboardingRoutes);
 
 // Unified System Activity Log & Audit Feed endpoints (Floor 20)
 app.use('/api/activity', activityRoutes);
+
+// Hiring Analytics Engine & Funnel Conversion KPIs (Floor 22)
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 Not Found Handler
 app.use((req: Request, res: Response) => {
