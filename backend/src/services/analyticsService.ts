@@ -241,7 +241,7 @@ export class AnalyticsService {
         s.stage,
         COUNT(DISTINCT fa.id)::bigint AS count
       FROM (
-        VALUES 
+        VALUES
           ('APPLIED'::text, 1),
           ('SCREENING'::text, 2),
           ('INTERVIEW'::text, 3),
@@ -252,7 +252,7 @@ export class AnalyticsService {
       LEFT JOIN filtered_apps fa ON (
         fa.current_stage::text = s.stage
         OR EXISTS (
-          SELECT 1 FROM application_stage_history ash 
+          SELECT 1 FROM application_stage_history ash
           WHERE ash.application_id = fa.id AND ash.to_stage::text = s.stage
         )
         OR (s.stage = 'APPLIED')

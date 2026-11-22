@@ -86,7 +86,7 @@ BEGIN
         COUNT(*) FILTER (WHERE o.status = 'DECLINED'),
         COALESCE(
             ROUND(
-                (COUNT(*) FILTER (WHERE o.status = 'ACCEPTED')::NUMERIC / 
+                (COUNT(*) FILTER (WHERE o.status = 'ACCEPTED')::NUMERIC /
                  NULLIF(COUNT(*) FILTER (WHERE o.status IN ('ACCEPTED', 'DECLINED')), 0)::NUMERIC) * 100.0,
                 1
             ),
@@ -112,7 +112,7 @@ BEGIN
         COUNT(*) FILTER (WHERE ie.status = 'COMPLETED'),
         COALESCE(
             ROUND(
-                (COUNT(*) FILTER (WHERE ie.status = 'COMPLETED')::NUMERIC / 
+                (COUNT(*) FILTER (WHERE ie.status = 'COMPLETED')::NUMERIC /
                  NULLIF(COUNT(*), 0)::NUMERIC) * 100.0,
                 1
             ),
@@ -147,7 +147,7 @@ BEGIN
             s.stage,
             COUNT(DISTINCT fa.id) AS candidate_count
         FROM (
-            VALUES 
+            VALUES
                 ('APPLIED'::TEXT, 1),
                 ('SCREENING'::TEXT, 2),
                 ('INTERVIEW'::TEXT, 3),
@@ -159,7 +159,7 @@ BEGIN
             -- Candidate reached this stage either by currently being at/past it, or having a stage history transition to it
             fa.current_stage::TEXT = s.stage
             OR EXISTS (
-                SELECT 1 FROM application_stage_history ash 
+                SELECT 1 FROM application_stage_history ash
                 WHERE ash.application_id = fa.id AND ash.to_stage::TEXT = s.stage
             )
             OR (s.stage = 'APPLIED') -- All applications start at APPLIED

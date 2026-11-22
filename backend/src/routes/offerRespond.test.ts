@@ -207,6 +207,62 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
       expect(res.body.data.onboardingTasks[3].category).toBe('LEGAL');
       expect(mockClientRelease).toHaveBeenCalledTimes(1);
     });
+
+    it('rolls back transaction if application stage update fails during offer acceptance', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(candidateAToken);
+
+      mockClientQuery
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockIssuedOfferRow] }) // lock offer
+        .mockRejectedValueOnce(new Error('Database error during application stage update')) // update application fails
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      const res = await request(app)
+        .post(`/api/offers/${offerId}/respond`)
+        .set('Authorization', 'Bearer valid-cand-token')
+        .send({
+          action: 'ACCEPT',
+          signature: 'Alex Morgan',
+        });
+
+      expect(res.status).toBe(500);
+      expect(res.body.success).toBe(false);
+      expect(mockClientQuery).toHaveBeenCalledWith('ROLLBACK');
+      expect(mockClientRelease).toHaveBeenCalledTimes(1);
+    });
+
+    it('rolls back transaction if onboarding task creation fails during offer acceptance', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(candidateAToken);
+
+      mockClientQuery
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockIssuedOfferRow] }) // lock offer
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: appId,
+              current_stage: 'HIRED',
+              hired_at: new Date(),
+            },
+          ],
+        }) // update application
+        .mockResolvedValueOnce({}) // insert stage history
+        .mockRejectedValueOnce(new Error('Database error during onboarding tasks insert')) // insert onboarding tasks fails
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      const res = await request(app)
+        .post(`/api/offers/${offerId}/respond`)
+        .set('Authorization', 'Bearer valid-cand-token')
+        .send({
+          action: 'ACCEPT',
+          signature: 'Alex Morgan',
+        });
+
+      expect(res.status).toBe(500);
+      expect(res.body.success).toBe(false);
+      expect(mockClientQuery).toHaveBeenCalledWith('ROLLBACK');
+      expect(mockClientRelease).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('2. Candidate Offer Decline (action: DECLINE)', () => {
@@ -252,6 +308,8 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
       expect(res.body.data.offer.status).toBe('DECLINED');
       expect(res.body.data.offer.declinedReason).toBe('Accepted competing counter-offer');
       expect(res.body.data.application.currentStage).toBe('REJECTED');
+      expect(res.body.data.application.currentStage).not.toBe('HIRED');
+      expect(res.body.data.onboardingTasks).toBeUndefined();
       expect(mockClientRelease).toHaveBeenCalledTimes(1);
     });
   });
@@ -379,6 +437,28 @@ describe('Candidate Offer Response API (/api/offers/:id/respond) & Security Guar
 
       expect(res.status).toBe(400);
       expect(res.body.error.message).toMatch(/already been accepted/i);
+    });
+
+    it('rejects duplicate response when offer is already DECLINED with 400 Bad Request', async () => {
+      mockVerifyFirebaseIdToken.mockResolvedValue(candidateAToken);
+
+      const alreadyDeclinedRow = {
+        ...mockIssuedOfferRow,
+        status: 'DECLINED',
+      };
+
+      mockClientQuery
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [alreadyDeclinedRow] })
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      const res = await request(app)
+        .post(`/api/offers/${offerId}/respond`)
+        .set('Authorization', 'Bearer valid-token')
+        .send({ action: 'DECLINE' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toMatch(/already been declined/i);
     });
 
     it('rejects double offer acceptance when candidate application is already HIRED with 400 Bad Request', async () => {
